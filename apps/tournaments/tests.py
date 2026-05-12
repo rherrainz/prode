@@ -210,6 +210,26 @@ class MvpFlowTests(TestCase):
         self.assertRedirects(response, reverse('tournaments:match_detail', kwargs={'slug': tournament.slug, 'match_id': self.locked_match.id}))
         self.assertFalse(Prediction.objects.filter(tournament=tournament, user=self.user, match=self.locked_match).exists())
 
+    def test_bulk_predictions_save_multiple_matches_with_select_scores(self):
+        tournament = FriendTournament.objects.create(name='Bulk Predictions Tournament')
+        TournamentMembership.objects.create(tournament=tournament, user=self.user)
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('tournaments:predictions', kwargs={'slug': tournament.slug}))
+        self.assertContains(response, '<option value="10"', html=False)
+
+        response = self.client.post(reverse('tournaments:predictions', kwargs={'slug': tournament.slug}), {
+            f'match_{self.future_match.id}_home': '2',
+            f'match_{self.future_match.id}_away': '1',
+            f'match_{self.locked_match.id}_home': '3',
+            f'match_{self.locked_match.id}_away': '0',
+        })
+
+        self.assertRedirects(response, reverse('tournaments:predictions', kwargs={'slug': tournament.slug}))
+        prediction = Prediction.objects.get(tournament=tournament, user=self.user, match=self.future_match)
+        self.assertEqual(prediction.score_label, '2 - 1')
+        self.assertFalse(Prediction.objects.filter(tournament=tournament, user=self.user, match=self.locked_match).exists())
+
     def test_points_and_leaderboard_are_per_tournament(self):
         tournament_a = FriendTournament.objects.create(name='Tournament A')
         tournament_b = FriendTournament.objects.create(name='Tournament B')

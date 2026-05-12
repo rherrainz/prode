@@ -14,6 +14,41 @@ from .models import FriendTournament, TournamentMembership
 from .services import join_tournament_by_code, leaderboard_for_tournament, user_is_member
 
 
+SCORE_CHOICES = range(0, 11)
+
+
+def _prediction_round_label(match):
+    if match.phase == Match.Phase.GROUP_STAGE:
+        if match.match_number <= 24:
+            return 'Ronda 1'
+        if match.match_number <= 48:
+            return 'Ronda 2'
+        return 'Ronda 3'
+    return match.get_phase_display()
+
+
+def _prediction_rounds(matches, predictions_by_match):
+    now = timezone.now()
+    rounds = []
+    current_label = None
+    current_matches = []
+    for match in matches:
+        label = _prediction_round_label(match)
+        if label != current_label:
+            if current_matches:
+                rounds.append({'label': current_label, 'matches': current_matches})
+            current_label = label
+            current_matches = []
+        current_matches.append({
+            'match': match,
+            'prediction': predictions_by_match.get(match.id),
+            'locked': now >= match.kickoff_at,
+        })
+    if current_matches:
+        rounds.append({'label': current_label, 'matches': current_matches})
+    return rounds
+
+
 def _member_tournament_or_forbidden(request, slug):
     tournament = get_object_or_404(FriendTournament, slug=slug)
     if not user_is_member(request.user, tournament):
@@ -147,12 +182,58 @@ def my_predictions(request, slug):
     tournament = _member_tournament_or_forbidden(request, slug)
     if tournament is None:
         return HttpResponseForbidden('No tenés permiso para ver este torneo.')
-    predictions = (
-        Prediction.objects.filter(tournament=tournament, user=request.user)
-        .select_related('match', 'match__home_team', 'match__away_team')
-        .order_by('match__match_number')
+    matches = list(
+        Match.objects.select_related('home_team', 'away_team', 'group')
+        .order_by('match_number')
     )
-    return render(request, 'predictions/list.html', {'tournament': tournament, 'predictions': predictions})
+    predictions = Prediction.objects.filter(tournament=tournament, user=request.user).select_related('match')
+    predictions_by_match = {prediction.match_id: prediction for prediction in predictions}
+
+    if request.method == 'POST':
+        saved_count = 0
+        locked_count = 0
+        now = timezone.now()
+        for match in matches:
+            home_key = f'match_{match.id}_home'
+            away_key = f'match_{match.id}_away'
+            home_score = request.POST.get(home_key)
+            away_score = request.POST.get(away_key)
+            if home_score == '' or away_score == '' or home_score is None or away_score is None:
+                continue
+            if now >= match.kickoff_at:
+                locked_count += 1
+                continue
+            try:
+                home_score_int = int(home_score)
+                away_score_int = int(away_score)
+            except ValueError:
+                messages.error(request, 'Hay pronósticos con valores inválidos.')
+                return redirect('tournaments:predictions', slug=tournament.slug)
+            if home_score_int not in SCORE_CHOICES or away_score_int not in SCORE_CHOICES:
+                messages.error(request, 'Los goles deben estar entre 0 y 10.')
+                return redirect('tournaments:predictions', slug=tournament.slug)
+            Prediction.objects.update_or_create(
+                tournament=tournament,
+                user=request.user,
+                match=match,
+                defaults={
+                    'predicted_home_score': home_score_int,
+                    'predicted_away_score': away_score_int,
+                },
+            )
+            saved_count += 1
+        if saved_count:
+            messages.success(request, f'Se guardaron {saved_count} pronósticos.')
+        if locked_count:
+            messages.warning(request, f'{locked_count} partidos ya estaban bloqueados.')
+        return redirect('tournaments:predictions', slug=tournament.slug)
+
+    rounds = _prediction_rounds(matches, predictions_by_match)
+    return render(request, 'predictions/list.html', {
+        'tournament': tournament,
+        'rounds': rounds,
+        'score_choices': SCORE_CHOICES,
+    })
 
 
 @login_required

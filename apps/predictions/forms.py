@@ -3,6 +3,9 @@ from django import forms
 from .models import Prediction
 
 
+SCORE_CHOICES = [(score, score) for score in range(0, 11)]
+
+
 class PredictionForm(forms.ModelForm):
     class Meta:
         model = Prediction
@@ -12,6 +15,6 @@ class PredictionForm(forms.ModelForm):
             'predicted_away_score': 'Goles visitante',
         }
         widgets = {
-            'predicted_home_score': forms.NumberInput(attrs={'min': 0}),
-            'predicted_away_score': forms.NumberInput(attrs={'min': 0}),
+            'predicted_home_score': forms.Select(choices=SCORE_CHOICES),
+            'predicted_away_score': forms.Select(choices=SCORE_CHOICES),
         }
