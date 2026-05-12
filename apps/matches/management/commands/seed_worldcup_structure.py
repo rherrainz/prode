@@ -91,7 +91,11 @@ VENUES = [
     ('Monterrey Stadium', 'America/Mexico_City'),
 ]
 
-GROUP_PAIRINGS = [(0, 1), (2, 3), (0, 2), (1, 3), (0, 3), (1, 2)]
+GROUP_ROUNDS = [
+    [(0, 1), (2, 3)],
+    [(0, 2), (1, 3)],
+    [(0, 3), (1, 2)],
+]
 GROUP_STAGE_START_UTC = datetime(2026, 6, 11, 19, 0, tzinfo=ZoneInfo('UTC'))
 
 
@@ -118,27 +122,31 @@ class Command(BaseCommand):
                 )
 
         match_number = 1
-        for _group_index, (letter, group) in enumerate(groups):
-            teams = [Team.objects.get(fifa_code=f'{letter}{position}') for position in range(1, 5)]
-            for pairing_index, (home_idx, away_idx) in enumerate(GROUP_PAIRINGS):
-                venue, venue_timezone = VENUES[(match_number - 1) % len(VENUES)]
-                slot = match_number - 1
-                kickoff_at = GROUP_STAGE_START_UTC + timedelta(days=slot // 4, hours=(slot % 4) * 3)
-                Match.objects.update_or_create(
-                    match_number=match_number,
-                    defaults={
-                        'phase': Match.Phase.GROUP_STAGE,
-                        'group': group,
-                        'home_team': teams[home_idx],
-                        'away_team': teams[away_idx],
-                        'home_team_placeholder': '',
-                        'away_team_placeholder': '',
-                        'kickoff_at': kickoff_at,
-                        'venue': venue,
-                        'venue_timezone': venue_timezone,
-                    },
-                )
-                match_number += 1
+        for round_index, round_pairings in enumerate(GROUP_ROUNDS):
+            for _group_index, (letter, group) in enumerate(groups):
+                teams = [Team.objects.get(fifa_code=f'{letter}{position}') for position in range(1, 5)]
+                for home_idx, away_idx in round_pairings:
+                    venue, venue_timezone = VENUES[(match_number - 1) % len(VENUES)]
+                    slot = match_number - 1
+                    kickoff_at = GROUP_STAGE_START_UTC + timedelta(
+                        days=(round_index * 7) + ((slot % 24) // 4),
+                        hours=(slot % 4) * 3,
+                    )
+                    Match.objects.update_or_create(
+                        match_number=match_number,
+                        defaults={
+                            'phase': Match.Phase.GROUP_STAGE,
+                            'group': group,
+                            'home_team': teams[home_idx],
+                            'away_team': teams[away_idx],
+                            'home_team_placeholder': '',
+                            'away_team_placeholder': '',
+                            'kickoff_at': kickoff_at,
+                            'venue': venue,
+                            'venue_timezone': venue_timezone,
+                        },
+                    )
+                    match_number += 1
 
         phases = (
             [(Match.Phase.ROUND_OF_32, 16)]
@@ -149,7 +157,7 @@ class Command(BaseCommand):
             + [(Match.Phase.FINAL, 1)]
         )
         slot = 1
-        knockout_start = datetime(2026, 6, 28, 15, 0)
+        knockout_start = datetime(2026, 7, 1, 15, 0)
         for phase, amount in phases:
             for phase_index in range(amount):
                 venue, venue_timezone = VENUES[(match_number - 1) % len(VENUES)]

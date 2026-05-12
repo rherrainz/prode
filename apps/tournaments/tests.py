@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.matches.models import Match
+from apps.matches.management.commands.seed_worldcup_structure import Command as SeedWorldCupCommand
 from apps.predictions.models import Prediction
 from apps.predictions.services import recalculate_predictions
 from apps.teams.models import Team
@@ -237,5 +238,18 @@ class MvpFlowTests(TestCase):
         rows_b = leaderboard_for_tournament(tournament_b)
         self.assertEqual([(row['user'].username, row['points']) for row in rows_a], [('player', 5), ('other', 2)])
         self.assertEqual([(row['user'].username, row['points']) for row in rows_b], [('player', 0)])
+
+    def test_seed_does_not_schedule_same_team_twice_on_same_day(self):
+        Match.objects.all().delete()
+        Team.objects.all().delete()
+        SeedWorldCupCommand().handle()
+
+        appearances = set()
+        for match in Match.objects.filter(phase=Match.Phase.GROUP_STAGE).select_related('home_team', 'away_team'):
+            match_day = match.kickoff_at.date()
+            for team in [match.home_team, match.away_team]:
+                key = (team_id := team.id, match_day)
+                self.assertNotIn(key, appearances, f'{team.name} aparece dos veces el {match_day}')
+                appearances.add((team_id, match_day))
 
 # Create your tests here.
