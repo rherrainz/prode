@@ -2,8 +2,6 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from django.core.management.base import BaseCommand
-from django.utils import timezone
-
 from apps.matches.models import Match
 from apps.teams.models import Team, WorldCupGroup
 
@@ -21,6 +19,57 @@ GROUPS = {
     'J': ['Argentina', 'Algeria', 'Austria', 'Jordan'],
     'K': ['Portugal', 'Congo DR', 'Uzbekistan', 'Colombia'],
     'L': ['England', 'Croatia', 'Ghana', 'Panama'],
+}
+
+FLAG_CODES = {
+    'Mexico': 'mx',
+    'South Africa': 'za',
+    'Korea Republic': 'kr',
+    'Czechia': 'cz',
+    'Canada': 'ca',
+    'Bosnia and Herzegovina': 'ba',
+    'Qatar': 'qa',
+    'Switzerland': 'ch',
+    'Brazil': 'br',
+    'Morocco': 'ma',
+    'Haiti': 'ht',
+    'Scotland': 'gb-sct',
+    'USA': 'us',
+    'Paraguay': 'py',
+    'Australia': 'au',
+    'Türkiye': 'tr',
+    'Germany': 'de',
+    'Curaçao': 'cw',
+    "Côte d'Ivoire": 'ci',
+    'Ecuador': 'ec',
+    'Netherlands': 'nl',
+    'Japan': 'jp',
+    'Sweden': 'se',
+    'Tunisia': 'tn',
+    'Belgium': 'be',
+    'Egypt': 'eg',
+    'IR Iran': 'ir',
+    'New Zealand': 'nz',
+    'Spain': 'es',
+    'Cabo Verde': 'cv',
+    'Saudi Arabia': 'sa',
+    'Uruguay': 'uy',
+    'France': 'fr',
+    'Senegal': 'sn',
+    'Iraq': 'iq',
+    'Norway': 'no',
+    'Argentina': 'ar',
+    'Algeria': 'dz',
+    'Austria': 'at',
+    'Jordan': 'jo',
+    'Portugal': 'pt',
+    'Congo DR': 'cd',
+    'Uzbekistan': 'uz',
+    'Colombia': 'co',
+    'England': 'gb-eng',
+    'Croatia': 'hr',
+    'Ghana': 'gh',
+    'Panama': 'pa',
 }
 
 VENUES = [
@@ -43,12 +92,7 @@ VENUES = [
 ]
 
 GROUP_PAIRINGS = [(0, 1), (2, 3), (0, 2), (1, 3), (0, 3), (1, 2)]
-GROUP_LOCAL_TIMES = [
-    (2026, 6, 11, 13, 0),
-    (2026, 6, 11, 19, 0),
-    (2026, 6, 12, 15, 0),
-    (2026, 6, 12, 18, 0),
-]
+GROUP_STAGE_START_UTC = datetime(2026, 6, 11, 19, 0, tzinfo=ZoneInfo('UTC'))
 
 
 def aware_from_local(year, month, day, hour, minute, tz_name):
@@ -70,25 +114,16 @@ class Command(BaseCommand):
             for position, team_name in enumerate(team_names, start=1):
                 Team.objects.update_or_create(
                     fifa_code=f'{letter}{position}',
-                    defaults={'name': team_name, 'group': group},
+                    defaults={'name': team_name, 'group': group, 'flag_code': FLAG_CODES.get(team_name, '')},
                 )
 
         match_number = 1
-        for group_index, (letter, group) in enumerate(groups):
+        for _group_index, (letter, group) in enumerate(groups):
             teams = [Team.objects.get(fifa_code=f'{letter}{position}') for position in range(1, 5)]
-            round_offsets = [0, 7, 13]
             for pairing_index, (home_idx, away_idx) in enumerate(GROUP_PAIRINGS):
                 venue, venue_timezone = VENUES[(match_number - 1) % len(VENUES)]
-                base_year, base_month, base_day, base_hour, base_minute = GROUP_LOCAL_TIMES[(match_number - 1) % len(GROUP_LOCAL_TIMES)]
-                round_number = pairing_index // 2
-                kickoff_at = aware_from_local(
-                    base_year,
-                    base_month,
-                    base_day,
-                    base_hour,
-                    base_minute,
-                    venue_timezone,
-                ) + timedelta(days=group_index + round_offsets[round_number])
+                slot = match_number - 1
+                kickoff_at = GROUP_STAGE_START_UTC + timedelta(days=slot // 4, hours=(slot % 4) * 3)
                 Match.objects.update_or_create(
                     match_number=match_number,
                     defaults={

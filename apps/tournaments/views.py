@@ -89,7 +89,7 @@ def tournament_detail(request, slug):
     tournament = _member_tournament_or_forbidden(request, slug)
     if tournament is None:
         return HttpResponseForbidden('No tenés permiso para ver este torneo.')
-    upcoming_matches = Match.objects.filter(kickoff_at__gte=timezone.now()).order_by('kickoff_at')[:5]
+    upcoming_matches = Match.objects.filter(kickoff_at__gte=timezone.now()).order_by('kickoff_at', 'match_number')[:5]
     return render(request, 'tournaments/detail.html', {'tournament': tournament, 'upcoming_matches': upcoming_matches})
 
 
@@ -100,7 +100,7 @@ def fixture(request, slug):
         return HttpResponseForbidden('No tenés permiso para ver este torneo.')
     predictions = Prediction.objects.filter(tournament=tournament, user=request.user)
     prediction_by_match = {prediction.match_id: prediction for prediction in predictions}
-    matches = Match.objects.select_related('home_team', 'away_team', 'group').order_by('kickoff_at', 'match_number')
+    matches = Match.objects.select_related('home_team', 'away_team', 'group').order_by('match_number')
     return render(request, 'tournaments/fixture.html', {
         'tournament': tournament,
         'matches': matches,
@@ -150,7 +150,7 @@ def my_predictions(request, slug):
     predictions = (
         Prediction.objects.filter(tournament=tournament, user=request.user)
         .select_related('match', 'match__home_team', 'match__away_team')
-        .order_by('match__kickoff_at')
+        .order_by('match__match_number')
     )
     return render(request, 'predictions/list.html', {'tournament': tournament, 'predictions': predictions})
 

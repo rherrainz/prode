@@ -6,7 +6,7 @@
   {% for membership in memberships %}
     <li class="list-group-item d-flex justify-content-between">
       <span>{{ membership.user.username }}</span>
-      <span class="badge-accent">{{ membership.get_role_display }}</span>
+      <span class="badge-accent"><i aria-hidden="true" class="bi bi-person-badge"></i> {{ membership.get_role_display }}</span>
     </li>
   {% empty %}
     <li class="list-group-item">No hay participantes.</li>

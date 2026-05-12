@@ -6,7 +6,7 @@
     <h1>Administrar torneos</h1>
     <p class="text-muted mb-0">Gestión rápida para crear torneos privados y compartir códigos de invitación.</p>
   </div>
-  <a class="btn btn-outline-primary" href="/admin/tournaments/friendtournament/">Django Admin</a>
+  <a class="btn btn-outline-primary" href="/admin/tournaments/friendtournament/"><i aria-hidden="true" class="bi bi-box-arrow-up-right"></i> Django Admin</a>
 </div>
 
 <div class="row g-4">
@@ -16,7 +16,7 @@
       <form method="post" class="stacked-form border-0 shadow-none p-0">
         {% csrf_token %}
         {{ form.as_p }}
-        <button class="btn btn-primary w-100" type="submit">Crear torneo</button>
+        <button class="btn btn-primary w-100" type="submit"><i aria-hidden="true" class="bi bi-plus-lg"></i> Crear torneo</button>
       </form>
     </section>
   </div>
@@ -44,19 +44,19 @@
                 <td><code class="invite-code">{{ tournament.invite_code }}</code></td>
                 <td>
                   {% if tournament.is_active %}
-                    <span class="badge-accent">Activo</span>
+                    <span class="badge-accent"><i aria-hidden="true" class="bi bi-check-circle"></i> Activo</span>
                   {% else %}
-                    <span class="badge-gold">Inactivo</span>
+                    <span class="badge-gold"><i aria-hidden="true" class="bi bi-pause-circle"></i> Inactivo</span>
                   {% endif %}
                 </td>
                 <td>{{ tournament.active_member_count }} / {{ tournament.max_members }}</td>
                 <td class="text-end">
                   <div class="d-flex gap-2 justify-content-end flex-wrap">
-                    <a class="btn btn-outline-primary btn-sm" href="{{ tournament.get_absolute_url }}">Ver</a>
+                    <a class="btn btn-outline-primary btn-sm" href="{{ tournament.get_absolute_url }}"><i aria-hidden="true" class="bi bi-eye"></i> Ver</a>
                     <form method="post" action="{% url 'tournaments:staff_toggle_active' tournament.slug %}">
                       {% csrf_token %}
                       <button class="btn btn-outline-secondary btn-sm" type="submit">
-                        {% if tournament.is_active %}Desactivar{% else %}Activar{% endif %}
+                        {% if tournament.is_active %}<i aria-hidden="true" class="bi bi-pause-circle"></i> Desactivar{% else %}<i aria-hidden="true" class="bi bi-check-circle"></i> Activar{% endif %}
                       </button>
                     </form>
                   </div>

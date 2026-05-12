@@ -19,7 +19,7 @@ class MvpFlowTests(TestCase):
         self.user = User.objects.create_user('player', 'player@example.com', 'pass12345')
         self.other_user = User.objects.create_user('other', 'other@example.com', 'pass12345')
         self.team_a = Team.objects.create(name='Team A', fifa_code='TAA')
-        self.team_b = Team.objects.create(name='Team B', fifa_code='TBB')
+        self.team_b = Team.objects.create(name='Team B', fifa_code='TBB', flag_code='br')
         self.team_c = Team.objects.create(name='Team C', fifa_code='TCC')
         self.team_d = Team.objects.create(name='Team D', fifa_code='TDD')
         self.future_match = Match.objects.create(
@@ -179,6 +179,7 @@ class MvpFlowTests(TestCase):
 
         self.assertContains(response, 'Horario sede: 11/06/2026 13:00')
         self.assertContains(response, 'Tu horario: 11/06/2026 16:00')
+        self.assertContains(response, 'fi-br')
 
     def test_prediction_can_be_created_and_edited_only_before_kickoff(self):
         tournament = FriendTournament.objects.create(name='Predictions Tournament')

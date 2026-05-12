@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load match_time %}
+{% load match_time match_display %}
 {% block content %}
 {% user_timezone as viewer_timezone %}
 <h1>Mis pronósticos</h1>
@@ -10,7 +10,7 @@
     <tbody>
       {% for prediction in predictions %}
         <tr>
-          <td>{{ prediction.match.home_label }} vs {{ prediction.match.away_label }}</td>
+          <td>{% team_label prediction.match.home_team prediction.match.home_team_placeholder %} <span class="text-muted mx-1">vs</span> {% team_label prediction.match.away_team prediction.match.away_team_placeholder %}</td>
           <td>{{ prediction.match.kickoff_at|match_datetime:viewer_timezone }}</td>
           <td><span class="match-score">{{ prediction.score_label }}</span></td>
           <td><span class="match-score">{{ prediction.match.score_label }}</span></td>

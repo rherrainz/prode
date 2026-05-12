@@ -51,6 +51,18 @@ h2 {
   margin-bottom: 1rem;
 }
 
+.match-title {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  flex-wrap: wrap;
+}
+
+.match-title .team-label {
+  color: inherit;
+  font-weight: inherit;
+}
+
 a {
   color: var(--color-soft-navy);
   text-decoration-color: rgba(110, 198, 233, .65);
@@ -120,23 +132,27 @@ a:hover {
 }
 
 .navbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
   color: var(--color-navy);
   letter-spacing: 0;
 }
 
-.navbar-brand::before {
-  content: "";
-  display: inline-block;
-  width: .6rem;
-  height: .6rem;
-  margin-right: .55rem;
+.navbar-brand__icon {
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 2rem;
   border-radius: 999px;
-  background: var(--color-sky);
-  box-shadow: 0 0 0 .24rem var(--color-soft-sky);
-  vertical-align: .08rem;
+  object-fit: cover;
+  box-shadow: 0 0 0 .18rem var(--color-soft-sky);
 }
 
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
   border-radius: var(--radius-sm);
   font-weight: 650;
   box-shadow: none;
@@ -176,6 +192,9 @@ a:hover {
 }
 
 .nav-pills .nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
   color: var(--color-soft-navy);
   border-radius: 999px;
   font-weight: 650;
@@ -233,6 +252,10 @@ a:hover {
   line-height: 1;
 }
 
+.bi {
+  line-height: 1;
+}
+
 .badge-accent,
 .match-status {
   background: var(--color-soft-sky);
@@ -252,6 +275,21 @@ a:hover {
   color: var(--color-navy);
   font-weight: 800;
   white-space: nowrap;
+}
+
+.team-label {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  font-weight: 650;
+  color: var(--color-text);
+}
+
+.team-label .fi {
+  width: 1.35em;
+  line-height: 1em;
+  border-radius: .16rem;
+  box-shadow: 0 0 0 1px rgba(16, 42, 67, .12);
 }
 
 .leaderboard-position {
@@ -387,6 +425,27 @@ a:hover {
   color: var(--color-muted);
   font-size: .9rem;
   padding: 2rem 0;
+}
+
+.footer__inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.footer a,
+.footer-item {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  color: var(--color-muted);
+  text-decoration: none;
+}
+
+.footer a:hover {
+  color: var(--color-navy);
 }
 
 @media (max-width: 767.98px) {

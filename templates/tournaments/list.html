@@ -2,7 +2,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1>Mis torneos</h1>
-  <a class="btn btn-primary" href="{% url 'tournaments:join' %}">Unirme a un torneo</a>
+  <a class="btn btn-primary" href="{% url 'tournaments:join' %}"><i aria-hidden="true" class="bi bi-key"></i> Unirme a un torneo</a>
 </div>
 {% if memberships %}
   <div class="d-grid gap-3">
@@ -10,7 +10,7 @@
       <a class="tournament-card" href="{{ membership.tournament.get_absolute_url }}">
         <strong>{{ membership.tournament.name }}</strong>
         <span class="text-muted d-block">{{ membership.tournament.description|default:'Sin descripción' }}</span>
-        <span class="text-muted d-block">{{ membership.tournament.active_member_count }} / {{ membership.tournament.max_members }} participantes</span>
+        <span class="text-muted d-block"><i aria-hidden="true" class="bi bi-people"></i> {{ membership.tournament.active_member_count }} / {{ membership.tournament.max_members }} participantes</span>
       </a>
     {% endfor %}
   </div>

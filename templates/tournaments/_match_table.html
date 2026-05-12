@@ -1,4 +1,4 @@
-{% load match_time %}
+{% load match_time match_display %}
 {% user_timezone as viewer_timezone %}
 <div class="table-responsive">
   <table class="table align-middle">
@@ -16,16 +16,16 @@
     <tbody>
       {% for match in matches %}
         <tr>
-          <td><span class="match-status">#{{ match.match_number }}</span></td>
+          <td><span class="match-status"><i aria-hidden="true" class="bi bi-calendar-event"></i> #{{ match.match_number }}</span></td>
           <td>
             {{ match.kickoff_at|match_datetime:match.venue_timezone }}
             <span class="text-muted d-block">{{ match.venue|default:'Sede por confirmar' }}</span>
           </td>
           <td>{{ match.kickoff_at|match_datetime:viewer_timezone }}</td>
           <td>{{ match.get_phase_display }}</td>
-          <td>{{ match.home_label }} vs {{ match.away_label }}</td>
+          <td>{% team_label match.home_team match.home_team_placeholder %} <span class="text-muted mx-1">vs</span> {% team_label match.away_team match.away_team_placeholder %}</td>
           <td><span class="match-score">{{ match.score_label }}</span></td>
-          <td><a class="btn btn-outline-primary btn-sm" href="{% url 'tournaments:match_detail' tournament.slug match.id %}">Pronóstico</a></td>
+          <td><a class="btn btn-outline-primary btn-sm" href="{% url 'tournaments:match_detail' tournament.slug match.id %}"><i aria-hidden="true" class="bi bi-pencil-square"></i> Pronóstico</a></td>
         </tr>
       {% empty %}
         <tr><td colspan="6">No hay partidos cargados.</td></tr>

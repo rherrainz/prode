@@ -4,16 +4,16 @@
 <section class="home-hero">
   <img class="home-hero__image" src="{% static 'images/banner.png' %}" alt="Prode Mundial 2026">
   <div class="home-hero__content">
-    <span class="badge-gold">Mundial 2026</span>
+    <span class="badge-gold"><i aria-hidden="true" class="bi bi-trophy"></i> Mundial 2026</span>
     <h1>Prode Mundial 2026</h1>
     <p class="lead">Torneos privados para pronosticar resultados del Mundial FIFA 2026 con amigos.</p>
     <div class="d-flex gap-2 flex-wrap">
       {% if user.is_authenticated %}
-        <a class="btn btn-primary" href="{% url 'tournaments:list' %}">Mis torneos</a>
-        <a class="btn btn-outline-primary" href="{% url 'tournaments:join' %}">Unirme a un torneo</a>
+        <a class="btn btn-primary" href="{% url 'tournaments:list' %}"><i aria-hidden="true" class="bi bi-trophy"></i> Mis torneos</a>
+        <a class="btn btn-outline-primary" href="{% url 'tournaments:join' %}"><i aria-hidden="true" class="bi bi-key"></i> Unirme a un torneo</a>
       {% else %}
-        <a class="btn btn-primary" href="{% url 'register' %}">Crear cuenta</a>
-        <a class="btn btn-outline-primary" href="{% url 'login' %}">Ingresar</a>
+        <a class="btn btn-primary" href="{% url 'register' %}"><i aria-hidden="true" class="bi bi-person-plus"></i> Crear cuenta</a>
+        <a class="btn btn-outline-primary" href="{% url 'login' %}"><i aria-hidden="true" class="bi bi-box-arrow-in-right"></i> Ingresar</a>
       {% endif %}
     </div>
   </div>
@@ -31,7 +31,7 @@
       <p class="text-muted mb-0">Los 10 partidos más cercanos del fixture global.</p>
     </div>
     {% if user.is_staff %}
-      <a class="btn btn-outline-primary" href="{% url 'tournaments:staff_admin' %}">Administrar torneos</a>
+      <a class="btn btn-outline-primary" href="{% url 'tournaments:staff_admin' %}"><i aria-hidden="true" class="bi bi-sliders"></i> Administrar torneos</a>
     {% endif %}
   </div>
   {% include 'core/_upcoming_matches.html' with matches=upcoming_matches %}

@@ -3,13 +3,13 @@
 <section class="panel mb-4">
   <h1>{{ tournament.name }}</h1>
   {% if tournament.description %}<p class="lead">{{ tournament.description }}</p>{% endif %}
-  <span class="badge-accent">{{ tournament.active_member_count }} / {{ tournament.max_members }} participantes</span>
+  <span class="badge-accent"><i aria-hidden="true" class="bi bi-people"></i> {{ tournament.active_member_count }} / {{ tournament.max_members }} participantes</span>
 </section>
 <div class="nav nav-pills mb-4">
-  <a class="nav-link" href="{% url 'tournaments:fixture' tournament.slug %}">Fixture</a>
-  <a class="nav-link" href="{% url 'tournaments:predictions' tournament.slug %}">Mis pronósticos</a>
-  <a class="nav-link" href="{% url 'tournaments:leaderboard' tournament.slug %}">Tabla de posiciones</a>
-  <a class="nav-link" href="{% url 'tournaments:members' tournament.slug %}">Participantes</a>
+  <a class="nav-link" href="{% url 'tournaments:fixture' tournament.slug %}"><i aria-hidden="true" class="bi bi-calendar3"></i> Fixture</a>
+  <a class="nav-link" href="{% url 'tournaments:predictions' tournament.slug %}"><i aria-hidden="true" class="bi bi-pencil-square"></i> Mis pronósticos</a>
+  <a class="nav-link" href="{% url 'tournaments:leaderboard' tournament.slug %}"><i aria-hidden="true" class="bi bi-bar-chart"></i> Tabla de posiciones</a>
+  <a class="nav-link" href="{% url 'tournaments:members' tournament.slug %}"><i aria-hidden="true" class="bi bi-people"></i> Participantes</a>
 </div>
 <h2>Próximos partidos</h2>
 {% include 'tournaments/_match_table.html' with matches=upcoming_matches tournament=tournament %}

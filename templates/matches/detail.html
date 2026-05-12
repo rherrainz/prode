@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
-{% load match_time %}
+{% load match_time match_display %}
 {% block content %}
 {% user_timezone as viewer_timezone %}
 <a href="{% url 'tournaments:fixture' tournament.slug %}" class="link-secondary">Fixture</a>
 <section class="match-card mt-3">
-  <span class="match-status">{{ match.get_phase_display }}</span>
-  <h1 class="mt-3">{{ match.home_label }} vs {{ match.away_label }}</h1>
+  <span class="match-status"><i aria-hidden="true" class="bi bi-calendar-event"></i> {{ match.get_phase_display }}</span>
+  <h1 class="mt-3 match-title">{% team_label match.home_team match.home_team_placeholder %} <span class="text-muted">vs</span> {% team_label match.away_team match.away_team_placeholder %}</h1>
   <p class="text-muted mb-1">Horario sede: {{ match.kickoff_at|match_datetime:match.venue_timezone }} · {{ match.venue|default:'Sede por confirmar' }}</p>
   <p class="text-muted">Tu horario: {{ match.kickoff_at|match_datetime:viewer_timezone }}</p>
   {% if match.status == 'finished' %}
@@ -21,7 +21,7 @@
     <form method="post" class="stacked-form">
       {% csrf_token %}
       {{ form.as_p }}
-      <button class="btn btn-primary" type="submit">Guardar pronóstico</button>
+      <button class="btn btn-primary" type="submit"><i aria-hidden="true" class="bi bi-check2"></i> Guardar pronóstico</button>
     </form>
   {% endif %}
 </div>
