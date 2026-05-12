@@ -72,6 +72,57 @@ FLAG_CODES = {
     'Panama': 'pa',
 }
 
+SPANISH_ALIASES = {
+    'Mexico': 'México',
+    'South Africa': 'Sudáfrica',
+    'Korea Republic': 'Corea del Sur',
+    'Czechia': 'Chequia',
+    'Canada': 'Canadá',
+    'Bosnia and Herzegovina': 'Bosnia y Herzegovina',
+    'Qatar': 'Qatar',
+    'Switzerland': 'Suiza',
+    'Brazil': 'Brasil',
+    'Morocco': 'Marruecos',
+    'Haiti': 'Haití',
+    'Scotland': 'Escocia',
+    'USA': 'Estados Unidos',
+    'Paraguay': 'Paraguay',
+    'Australia': 'Australia',
+    'Türkiye': 'Turquía',
+    'Germany': 'Alemania',
+    'Curaçao': 'Curazao',
+    "Côte d'Ivoire": 'Costa de Marfil',
+    'Ecuador': 'Ecuador',
+    'Netherlands': 'Países Bajos',
+    'Japan': 'Japón',
+    'Sweden': 'Suecia',
+    'Tunisia': 'Túnez',
+    'Belgium': 'Bélgica',
+    'Egypt': 'Egipto',
+    'IR Iran': 'Irán',
+    'New Zealand': 'Nueva Zelanda',
+    'Spain': 'España',
+    'Cabo Verde': 'Cabo Verde',
+    'Saudi Arabia': 'Arabia Saudita',
+    'Uruguay': 'Uruguay',
+    'France': 'Francia',
+    'Senegal': 'Senegal',
+    'Iraq': 'Irak',
+    'Norway': 'Noruega',
+    'Argentina': 'Argentina',
+    'Algeria': 'Argelia',
+    'Austria': 'Austria',
+    'Jordan': 'Jordania',
+    'Portugal': 'Portugal',
+    'Congo DR': 'RD Congo',
+    'Uzbekistan': 'Uzbekistán',
+    'Colombia': 'Colombia',
+    'England': 'Inglaterra',
+    'Croatia': 'Croacia',
+    'Ghana': 'Ghana',
+    'Panama': 'Panamá',
+}
+
 VENUES = [
     ('Mexico City Stadium', 'America/Mexico_City'),
     ('Estadio Guadalajara', 'America/Mexico_City'),
@@ -118,7 +169,12 @@ class Command(BaseCommand):
             for position, team_name in enumerate(team_names, start=1):
                 Team.objects.update_or_create(
                     fifa_code=f'{letter}{position}',
-                    defaults={'name': team_name, 'group': group, 'flag_code': FLAG_CODES.get(team_name, '')},
+                    defaults={
+                        'name': team_name,
+                        'display_name': SPANISH_ALIASES.get(team_name, team_name),
+                        'group': group,
+                        'flag_code': FLAG_CODES.get(team_name, ''),
+                    },
                 )
 
         match_number = 1

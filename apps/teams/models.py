@@ -16,6 +16,7 @@ class WorldCupGroup(models.Model):
 
 class Team(models.Model):
     name = models.CharField(max_length=120)
+    display_name = models.CharField(max_length=120, blank=True)
     fifa_code = models.CharField(max_length=10, blank=True)
     group = models.ForeignKey(WorldCupGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name='teams')
     flag_code = models.CharField(max_length=12, blank=True)
@@ -31,5 +32,9 @@ class Team(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def public_name(self):
+        return self.display_name or self.name
 
 # Create your models here.

@@ -12,8 +12,8 @@ class WorldCupGroupAdmin(admin.ModelAdmin):
 
 @admin.register(Team)
 class TeamAdmin(admin.ModelAdmin):
-    list_display = ['name', 'fifa_code', 'flag_code', 'group', 'updated_at']
+    list_display = ['name', 'display_name', 'fifa_code', 'flag_code', 'group', 'updated_at']
     list_filter = ['group']
-    search_fields = ['name', 'fifa_code', 'flag_code']
+    search_fields = ['name', 'display_name', 'fifa_code', 'flag_code']
 
 # Register your models here.

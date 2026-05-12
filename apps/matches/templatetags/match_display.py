@@ -7,5 +7,5 @@ register = template.Library()
 def team_label(team, placeholder='TBD'):
     return {
         'team': team,
-        'label': team.name if team else placeholder or 'TBD',
+        'label': team.public_name if team else placeholder or 'TBD',
     }
