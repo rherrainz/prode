@@ -159,6 +159,9 @@ LOGOUT_REDIRECT_URL = 'home'
 
 API_FOOTBALL_KEY = os.getenv('API_FOOTBALL_KEY', '')
 API_FOOTBALL_BASE_URL = os.getenv('API_FOOTBALL_BASE_URL', 'https://v3.football.api-sports.io')
+THESPORTSDB_API_KEY = os.getenv('THESPORTSDB_API_KEY', '123')
+THESPORTSDB_BASE_URL = os.getenv('THESPORTSDB_BASE_URL', 'https://www.thesportsdb.com/api/v1/json')
+THESPORTSDB_WORLD_CUP_LEAGUE_ID = os.getenv('THESPORTSDB_WORLD_CUP_LEAGUE_ID', '4429')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

@@ -52,6 +52,7 @@ python manage.py recalculate_points
 python manage.py recalculate_points --tournament slug-del-torneo
 python manage.py recalculate_points --match 1
 python manage.py sync_api_football_stub
+python manage.py sync_thesportsdb_results --dry-run
 ```
 
 `seed_worldcup_structure` carga los 12 grupos sorteados, 48 equipos, 72 partidos de fase de grupos y placeholders de eliminación directa hasta completar 104 partidos. Los horarios se guardan en UTC y cada partido conserva `venue_timezone` para mostrar horario de sede y horario del usuario.
@@ -91,6 +92,22 @@ Para persistir SQLite en Railway, montar un volumen y usar `DATABASE_PATH=/data/
 ## API-Football
 
 La app siempre lee fixtures y resultados desde SQLite. La integración externa queda preparada en `apps.matches.services.api_football` y por ahora el comando `sync_api_football_stub` solo crea un `ApiSyncLog`.
+
+## TheSportsDB
+
+TheSportsDB se puede usar como fuente gratuita para resultados finales. La app sigue leyendo desde SQLite; el comando solo actualiza partidos locales cuando encuentra marcadores.
+
+```powershell
+python manage.py sync_thesportsdb_results --date 2026-06-11 --days-back 0 --days-forward 0 --dry-run
+python manage.py sync_thesportsdb_results
+```
+
+Para Railway Cron cada 2 horas:
+
+```bash
+python manage.py sync_thesportsdb_results --days-back 1 --days-forward 1
+python manage.py recalculate_points
+```
 
 ## Futuro Google Login
 

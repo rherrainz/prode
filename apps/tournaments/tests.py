@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from apps.matches.models import Match
 from apps.matches.management.commands.seed_worldcup_structure import Command as SeedWorldCupCommand
+from apps.matches.services import thesportsdb
 from apps.predictions.models import Prediction
 from apps.predictions.services import recalculate_predictions
 from apps.teams.models import Team
@@ -271,5 +272,31 @@ class MvpFlowTests(TestCase):
                 key = (team_id := team.id, match_day)
                 self.assertNotIn(key, appearances, f'{team.name} aparece dos veces el {match_day}')
                 appearances.add((team_id, match_day))
+
+    def test_thesportsdb_sync_updates_finished_result(self):
+        self.future_match.external_id = 'thesportsdb:fixture-1'
+        self.future_match.save(update_fields=['external_id'])
+
+        def fake_fetch_events_for_day(day):
+            return 'fake-endpoint', [{
+                'idEvent': 'fixture-1',
+                'strHomeTeam': 'Team A',
+                'strAwayTeam': 'Team B',
+                'intHomeScore': '2',
+                'intAwayScore': '1',
+            }]
+
+        original_fetch = thesportsdb._fetch_events_for_day
+        thesportsdb._fetch_events_for_day = fake_fetch_events_for_day
+        try:
+            result = thesportsdb.sync_results(days_back=0, days_forward=0)
+        finally:
+            thesportsdb._fetch_events_for_day = original_fetch
+
+        self.future_match.refresh_from_db()
+        self.assertEqual(result['updated_count'], 1)
+        self.assertEqual(self.future_match.status, Match.Status.FINISHED)
+        self.assertEqual(self.future_match.home_score, 2)
+        self.assertEqual(self.future_match.away_score, 1)
 
 # Create your tests here.
