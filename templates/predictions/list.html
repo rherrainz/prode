@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load match_time %}
+{% block content %}
+{% user_timezone as viewer_timezone %}
+<h1>Mis pronósticos</h1>
+<p class="text-muted">{{ tournament.name }}</p>
+<div class="table-responsive">
+  <table class="table align-middle">
+    <thead><tr><th>Partido</th><th>Tu horario</th><th>Pronóstico</th><th>Resultado</th><th>Puntos</th></tr></thead>
+    <tbody>
+      {% for prediction in predictions %}
+        <tr>
+          <td>{{ prediction.match.home_label }} vs {{ prediction.match.away_label }}</td>
+          <td>{{ prediction.match.kickoff_at|match_datetime:viewer_timezone }}</td>
+          <td><span class="match-score">{{ prediction.score_label }}</span></td>
+          <td><span class="match-score">{{ prediction.match.score_label }}</span></td>
+          <td><span class="leaderboard-points">{{ prediction.points }}</span></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5">Todavía no cargaste pronósticos.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

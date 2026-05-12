@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load match_time %}
+{% block content %}
+{% user_timezone as viewer_timezone %}
+<a href="{% url 'tournaments:fixture' tournament.slug %}" class="link-secondary">Fixture</a>
+<section class="match-card mt-3">
+  <span class="match-status">{{ match.get_phase_display }}</span>
+  <h1 class="mt-3">{{ match.home_label }} vs {{ match.away_label }}</h1>
+  <p class="text-muted mb-1">Horario sede: {{ match.kickoff_at|match_datetime:match.venue_timezone }} · {{ match.venue|default:'Sede por confirmar' }}</p>
+  <p class="text-muted">Tu horario: {{ match.kickoff_at|match_datetime:viewer_timezone }}</p>
+  {% if match.status == 'finished' %}
+    <p><strong>Partido finalizado:</strong> <span class="match-score">{{ match.score_label }}</span></p>
+  {% endif %}
+</section>
+<div class="narrow">
+  <h2>Pronóstico</h2>
+  {% if locked %}
+    <div class="alert alert-warning">Pronóstico bloqueado</div>
+    {% if prediction %}<p>Tu pronóstico: <span class="match-score">{{ prediction.score_label }}</span> · Puntos: <span class="leaderboard-points">{{ prediction.points }}</span></p>{% endif %}
+  {% else %}
+    <form method="post" class="stacked-form">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button class="btn btn-primary" type="submit">Guardar pronóstico</button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

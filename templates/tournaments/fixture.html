@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Fixture del torneo</h1>
+<p class="text-muted">{{ tournament.name }}</p>
+{% include 'tournaments/_match_table.html' with matches=matches tournament=tournament %}
+{% endblock %}

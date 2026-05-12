@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Administrar torneos{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+  <div>
+    <h1>Administrar torneos</h1>
+    <p class="text-muted mb-0">Gestión rápida para crear torneos privados y compartir códigos de invitación.</p>
+  </div>
+  <a class="btn btn-outline-primary" href="/admin/tournaments/friendtournament/">Django Admin</a>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <section class="panel">
+      <h2>Crear torneo</h2>
+      <form method="post" class="stacked-form border-0 shadow-none p-0">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="btn btn-primary w-100" type="submit">Crear torneo</button>
+      </form>
+    </section>
+  </div>
+  <div class="col-lg-8">
+    <section class="panel">
+      <h2>Torneos</h2>
+      <div class="table-responsive shadow-none">
+        <table class="table align-middle">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Código</th>
+              <th>Estado</th>
+              <th>Participantes</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for tournament in tournaments %}
+              <tr>
+                <td>
+                  <strong>{{ tournament.name }}</strong>
+                  <span class="text-muted d-block">{{ tournament.slug }}</span>
+                </td>
+                <td><code class="invite-code">{{ tournament.invite_code }}</code></td>
+                <td>
+                  {% if tournament.is_active %}
+                    <span class="badge-accent">Activo</span>
+                  {% else %}
+                    <span class="badge-gold">Inactivo</span>
+                  {% endif %}
+                </td>
+                <td>{{ tournament.active_member_count }} / {{ tournament.max_members }}</td>
+                <td class="text-end">
+                  <div class="d-flex gap-2 justify-content-end flex-wrap">
+                    <a class="btn btn-outline-primary btn-sm" href="{{ tournament.get_absolute_url }}">Ver</a>
+                    <form method="post" action="{% url 'tournaments:staff_toggle_active' tournament.slug %}">
+                      {% csrf_token %}
+                      <button class="btn btn-outline-secondary btn-sm" type="submit">
+                        {% if tournament.is_active %}Desactivar{% else %}Activar{% endif %}
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5">Todavía no hay torneos.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

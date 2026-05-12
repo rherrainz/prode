@@ -1,0 +1,27 @@
+.env
+.env.*
+!.env.example
+db.sqlite3
+*.sqlite3
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+staticfiles/
+.venv/
+venv/
+
+# Python packaging
+build/
+dist/
+*.egg-info/
+
+# Django/local runtime
+media/
+*.log
+
+# IDEs and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

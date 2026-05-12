@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Tabla de posiciones</h1>
+<p class="text-muted">{{ tournament.name }}</p>
+<table class="table align-middle">
+  <thead><tr><th>Posición</th><th>Participante</th><th>Puntos</th></tr></thead>
+  <tbody>
+    {% for row in rows %}
+      <tr>
+        <td><span class="leaderboard-position">{{ row.position }}</span></td>
+        <td>{{ row.user.username }}</td>
+        <td><span class="leaderboard-points">{{ row.points }}</span></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="3">No hay participantes.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

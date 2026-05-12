@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Participantes</h1>
+<p class="text-muted">{{ tournament.name }}</p>
+<ul class="list-group">
+  {% for membership in memberships %}
+    <li class="list-group-item d-flex justify-content-between">
+      <span>{{ membership.user.username }}</span>
+      <span class="badge-accent">{{ membership.get_role_display }}</span>
+    </li>
+  {% empty %}
+    <li class="list-group-item">No hay participantes.</li>
+  {% endfor %}
+</ul>
+{% endblock %}
