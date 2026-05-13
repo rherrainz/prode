@@ -89,6 +89,24 @@ API_FOOTBALL_BASE_URL=https://v3.football.api-sports.io
 
 Para persistir SQLite en Railway, montar un volumen y usar `DATABASE_PATH=/data/db.sqlite3`.
 
+### Base de datos en producción
+
+Por defecto la app usa SQLite:
+
+```text
+DATABASE_ENGINE=sqlite
+DATABASE_PATH=/data/db.sqlite3
+```
+
+Para Railway PostgreSQL, agregar una base PostgreSQL al proyecto y configurar:
+
+```text
+DATABASE_ENGINE=postgres
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+```
+
+Si `DATABASE_URL` empieza con `postgres://` o `postgresql://`, la app usa PostgreSQL aunque `DATABASE_ENGINE` no esté definido. En producción se recomienda PostgreSQL para evitar problemas de persistencia/concurrencia con SQLite.
+
 ## API-Football
 
 La app siempre lee fixtures y resultados desde SQLite. La integración externa queda preparada en `apps.matches.services.api_football` y por ahora el comando `sync_api_football_stub` solo crea un `ApiSyncLog`.

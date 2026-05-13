@@ -13,6 +13,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import importlib.util
 import os
 from pathlib import Path
+from urllib.parse import parse_qs, unquote, urlparse
+
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -93,12 +96,39 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.getenv('DATABASE_PATH', str(BASE_DIR / 'db.sqlite3')),
+
+def postgres_config_from_url(database_url):
+    parsed = urlparse(database_url)
+    query = parse_qs(parsed.query)
+    config = {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': unquote(parsed.path.lstrip('/')),
+        'USER': unquote(parsed.username or ''),
+        'PASSWORD': unquote(parsed.password or ''),
+        'HOST': parsed.hostname or '',
+        'PORT': str(parsed.port or ''),
     }
-}
+    sslmode = query.get('sslmode', [None])[0]
+    if sslmode:
+        config['OPTIONS'] = {'sslmode': sslmode}
+    return config
+
+
+DATABASE_ENGINE = os.getenv('DATABASE_ENGINE', 'sqlite').lower()
+DATABASE_URL = os.getenv('DATABASE_URL', '').strip()
+USE_POSTGRES = DATABASE_ENGINE in {'postgres', 'postgresql'} or DATABASE_URL.startswith(('postgres://', 'postgresql://'))
+
+if USE_POSTGRES:
+    if not DATABASE_URL:
+        raise ImproperlyConfigured('DATABASE_URL is required when DATABASE_ENGINE=postgres.')
+    DATABASES = {'default': postgres_config_from_url(DATABASE_URL)}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.getenv('DATABASE_PATH', str(BASE_DIR / 'db.sqlite3')),
+        }
+    }
 
 
 # Password validation
