@@ -25,3 +25,5 @@ urlpatterns = [
     path('tournaments/', include('apps.tournaments.urls')),
     path('admin/', admin.site.urls),
 ]
+
+handler404 = 'apps.core.views.redirect_not_found_to_home'

@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.utils import timezone
 
 from apps.matches.models import Match
@@ -12,4 +12,6 @@ def home(request):
     )
     return render(request, 'core/home.html', {'upcoming_matches': upcoming_matches})
 
-# Create your views here.
+
+def redirect_not_found_to_home(request, exception):
+    return redirect('home')
