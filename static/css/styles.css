@@ -327,6 +327,54 @@ a:hover {
   font-weight: 750;
 }
 
+.prediction-match-builder {
+  display: grid;
+  gap: .4rem;
+  min-width: 18rem;
+}
+
+.prediction-team-row {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.prediction-team-name {
+  min-width: 0;
+}
+
+.prediction-team-name .team-label {
+  max-width: 100%;
+}
+
+.prediction-versus {
+  color: var(--color-muted);
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.prediction-match-builder--form {
+  margin-bottom: 1rem;
+}
+
+.stacked-form .prediction-team-row {
+  display: flex;
+  color: inherit;
+  font-weight: inherit;
+  margin-bottom: 0;
+}
+
+.stacked-form .prediction-team-row select {
+  width: 4rem;
+  padding: .58rem .7rem;
+  font-weight: 750;
+}
+
 .score-selects {
   display: inline-flex;
   align-items: center;
@@ -528,6 +576,21 @@ a:hover {
 
   .table {
     min-width: 720px;
+  }
+
+  .prediction-match-builder {
+    min-width: 0;
+  }
+
+  .prediction-team-row select,
+  .stacked-form .prediction-team-row select {
+    flex: 0 0 3.75rem;
+    width: 3.75rem;
+  }
+
+  .prediction-team-name {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .match-mobile-list {

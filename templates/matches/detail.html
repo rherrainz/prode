@@ -20,7 +20,17 @@
   {% else %}
     <form method="post" class="stacked-form">
       {% csrf_token %}
-      {{ form.as_p }}
+      <div class="prediction-match-builder prediction-match-builder--form">
+        <label class="prediction-team-row" for="{{ form.predicted_home_score.id_for_label }}">
+          <span class="prediction-team-name">{% team_label match.home_team match.home_team_placeholder %}</span>
+          {{ form.predicted_home_score }}
+        </label>
+        <span class="prediction-versus">vs</span>
+        <label class="prediction-team-row" for="{{ form.predicted_away_score.id_for_label }}">
+          <span class="prediction-team-name">{% team_label match.away_team match.away_team_placeholder %}</span>
+          {{ form.predicted_away_score }}
+        </label>
+      </div>
       <button class="btn btn-primary" type="submit"><i aria-hidden="true" class="bi bi-check2"></i> Guardar pronóstico</button>
     </form>
   {% endif %}
