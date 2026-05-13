@@ -2,7 +2,9 @@
 
 Aplicación Django monolítica para torneos privados de pronósticos del Mundial FIFA 2026.
 
-## Setup local en Windows PowerShell
+## Setup local
+
+### Windows PowerShell
 
 ```powershell
 python -m venv .venv
@@ -22,6 +24,28 @@ Si no activás el entorno, podés ejecutar todo con el Python del venv:
 .\.venv\Scripts\python.exe manage.py createsuperuser
 .\.venv\Scripts\python.exe manage.py seed_worldcup_structure
 .\.venv\Scripts\python.exe manage.py runserver
+```
+
+### Linux / macOS
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py seed_worldcup_structure
+python manage.py runserver
+```
+
+Si no activás el entorno, podés ejecutar todo con el Python del venv:
+
+```bash
+.venv/bin/python manage.py migrate
+.venv/bin/python manage.py createsuperuser
+.venv/bin/python manage.py seed_worldcup_structure
+.venv/bin/python manage.py runserver
 ```
 
 La app queda disponible en `http://127.0.0.1:8000/`.
@@ -59,12 +83,24 @@ python manage.py sync_thesportsdb_results --dry-run
 
 ## Verificación local
 
+### Windows PowerShell
+
 ```powershell
 .\.venv\Scripts\python.exe manage.py check
 .\.venv\Scripts\python.exe manage.py migrate
 .\.venv\Scripts\python.exe manage.py seed_worldcup_structure
 .\.venv\Scripts\python.exe manage.py shell -c "from apps.teams.models import WorldCupGroup, Team; from apps.matches.models import Match; print(WorldCupGroup.objects.count(), Team.objects.count(), Match.objects.count())"
 .\.venv\Scripts\python.exe manage.py test apps.tournaments
+```
+
+### Linux / macOS
+
+```bash
+.venv/bin/python manage.py check
+.venv/bin/python manage.py migrate
+.venv/bin/python manage.py seed_worldcup_structure
+.venv/bin/python manage.py shell -c 'from apps.teams.models import WorldCupGroup, Team; from apps.matches.models import Match; print(WorldCupGroup.objects.count(), Team.objects.count(), Match.objects.count())'
+.venv/bin/python manage.py test apps.tournaments
 ```
 
 El conteo esperado después del seed es:

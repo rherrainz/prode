@@ -1,6 +1,26 @@
 {% load match_time match_display %}
 {% user_timezone as viewer_timezone %}
-<div class="table-responsive">
+<div class="match-mobile-list">
+  {% for match in matches %}
+    <article class="match-card">
+      <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+        <span class="match-status"><i aria-hidden="true" class="bi bi-calendar-event"></i> #{{ match.match_number }}</span>
+        <span class="badge-accent">{{ match.get_phase_display }}</span>
+      </div>
+      <div class="match-card__teams">{% team_label match.home_team match.home_team_placeholder %} <span class="text-muted mx-1">vs</span> {% team_label match.away_team match.away_team_placeholder %}</div>
+      <div class="match-card__meta">
+        <span><i aria-hidden="true" class="bi bi-clock"></i> {{ match.kickoff_at|match_datetime:viewer_timezone }}</span>
+        <span><i aria-hidden="true" class="bi bi-geo-alt"></i> {{ match.venue|default:'Sede por confirmar' }}</span>
+      </div>
+    </article>
+  {% empty %}
+    <section class="panel">
+      <p class="mb-0">No hay partidos próximos cargados.</p>
+    </section>
+  {% endfor %}
+</div>
+
+<div class="table-responsive match-table-desktop">
   <table class="table align-middle">
     <thead>
       <tr>

@@ -240,6 +240,22 @@ a:hover {
   margin-bottom: .85rem;
 }
 
+.match-mobile-list {
+  display: none;
+}
+
+.match-card__teams {
+  font-size: 1.05rem;
+  margin-bottom: .85rem;
+}
+
+.match-card__meta {
+  display: grid;
+  gap: .35rem;
+  color: var(--color-muted);
+  font-size: .94rem;
+}
+
 .match-status,
 .badge-accent,
 .badge-gold,
@@ -292,6 +308,10 @@ a:hover {
   box-shadow: 0 0 0 1px rgba(16, 42, 67, .12);
 }
 
+.team-label__short {
+  display: none;
+}
+
 .prediction-round {
   margin-bottom: 1.25rem;
 }
@@ -341,7 +361,8 @@ a:hover {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-subtle);
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .table {
@@ -484,26 +505,61 @@ a:hover {
   main.container {
     padding-left: 1rem;
     padding-right: 1rem;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   .navbar .container {
+    flex-wrap: wrap;
     align-items: flex-start;
     gap: .75rem;
   }
 
+  .navbar-brand {
+    max-width: 100%;
+    white-space: normal;
+  }
+
   .navbar .d-flex {
+    width: 100%;
     flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-content: flex-start;
   }
 
   .table {
     min-width: 720px;
   }
 
+  .match-mobile-list {
+    display: block;
+  }
+
+  .match-table-desktop {
+    display: none;
+  }
+
+  .team-label__full {
+    display: none;
+  }
+
+  .team-label__short {
+    display: inline;
+    font-weight: 800;
+    letter-spacing: .02em;
+  }
+
   .card,
   .panel,
   .stacked-form {
     padding: 1rem;
+  }
+
+  .card,
+  .panel,
+  .home-hero,
+  .stacked-form {
+    max-width: 100%;
+    overflow-wrap: break-word;
   }
 
   .home-hero {
@@ -515,6 +571,8 @@ a:hover {
   }
 
   .home-hero__content {
+    width: 100%;
+    max-width: none;
     padding: 1.4rem;
   }
 }

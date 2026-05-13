@@ -2,5 +2,6 @@
   {% if team and team.flag_code %}
     <span class="fi fi-{{ team.flag_code }}" aria-hidden="true"></span>
   {% endif %}
-  <span>{{ label }}</span>
+  <span class="team-label__full">{{ label }}</span>
+  <span class="team-label__short" aria-label="{{ label }}">{{ short_label }}</span>
 </span>
