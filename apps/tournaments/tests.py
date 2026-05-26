@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone as datetime_timezone
+from zoneinfo import ZoneInfo
 
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -272,6 +273,18 @@ class MvpFlowTests(TestCase):
                 key = (team_id := team.id, match_day)
                 self.assertNotIn(key, appearances, f'{team.name} aparece dos veces el {match_day}')
                 appearances.add((team_id, match_day))
+
+    def test_seed_sets_argentina_austria_at_14_argentina_time(self):
+        Match.objects.all().delete()
+        Team.objects.all().delete()
+        SeedWorldCupCommand().handle()
+
+        match = Match.objects.get(home_team__name='Argentina', away_team__name='Austria')
+        argentina_time = match.kickoff_at.astimezone(ZoneInfo('America/Buenos_Aires'))
+
+        self.assertEqual(match.venue, 'Dallas Stadium')
+        self.assertEqual(match.venue_timezone, 'America/Chicago')
+        self.assertEqual(argentina_time.strftime('%Y-%m-%d %H:%M'), '2026-06-22 14:00')
 
     def test_thesportsdb_sync_updates_finished_result(self):
         self.future_match.external_id = 'thesportsdb:fixture-1'

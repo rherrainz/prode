@@ -149,6 +149,24 @@ GROUP_ROUNDS = [
 ]
 GROUP_STAGE_START_UTC = datetime(2026, 6, 11, 19, 0, tzinfo=ZoneInfo('UTC'))
 
+OFFICIAL_GROUP_FIXTURE_OVERRIDES = {
+    ('Argentina', 'Algeria'): {
+        'kickoff_at': datetime(2026, 6, 17, 1, 0, tzinfo=ZoneInfo('UTC')),
+        'venue': 'Kansas City Stadium',
+        'venue_timezone': 'America/Chicago',
+    },
+    ('Argentina', 'Austria'): {
+        'kickoff_at': datetime(2026, 6, 22, 17, 0, tzinfo=ZoneInfo('UTC')),
+        'venue': 'Dallas Stadium',
+        'venue_timezone': 'America/Chicago',
+    },
+    ('Argentina', 'Jordan'): {
+        'kickoff_at': datetime(2026, 6, 28, 2, 0, tzinfo=ZoneInfo('UTC')),
+        'venue': 'Dallas Stadium',
+        'venue_timezone': 'America/Chicago',
+    },
+}
+
 
 def aware_from_local(year, month, day, hour, minute, tz_name):
     local_dt = datetime(year, month, day, hour, minute, tzinfo=ZoneInfo(tz_name))
@@ -188,6 +206,11 @@ class Command(BaseCommand):
                         days=(round_index * 7) + ((slot % 24) // 4),
                         hours=(slot % 4) * 3,
                     )
+                    override = OFFICIAL_GROUP_FIXTURE_OVERRIDES.get((teams[home_idx].name, teams[away_idx].name))
+                    if override:
+                        kickoff_at = override['kickoff_at']
+                        venue = override['venue']
+                        venue_timezone = override['venue_timezone']
                     Match.objects.update_or_create(
                         match_number=match_number,
                         defaults={
