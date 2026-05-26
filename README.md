@@ -79,7 +79,7 @@ python manage.py sync_api_football_stub
 python manage.py sync_thesportsdb_results --dry-run
 ```
 
-`seed_worldcup_structure` carga los 12 grupos sorteados, 48 equipos, 72 partidos de fase de grupos y placeholders de eliminación directa hasta completar 104 partidos. Los horarios se guardan en UTC y cada partido conserva `venue_timezone` para mostrar horario de sede y horario del usuario.
+`seed_worldcup_structure` carga los 12 grupos sorteados, 48 equipos y los 104 partidos desde `apps/matches/data/world_cup_2026_schedule.csv`. Los horarios se guardan en UTC y cada partido conserva `venue_timezone` para mostrar horario de sede y horario del usuario.
 
 ## Verificación local
 

@@ -279,10 +279,10 @@ class MvpFlowTests(TestCase):
         Team.objects.all().delete()
         SeedWorldCupCommand().handle()
 
-        match = Match.objects.get(home_team__name='Argentina', away_team__name='Austria')
+        match = Match.objects.get(match_number=41, home_team__name='Argentina', away_team__name='Austria')
         argentina_time = match.kickoff_at.astimezone(ZoneInfo('America/Buenos_Aires'))
 
-        self.assertEqual(match.venue, 'Dallas Stadium')
+        self.assertEqual(match.venue, 'AT&T Stadium')
         self.assertEqual(match.venue_timezone, 'America/Chicago')
         self.assertEqual(argentina_time.strftime('%Y-%m-%d %H:%M'), '2026-06-22 14:00')
 

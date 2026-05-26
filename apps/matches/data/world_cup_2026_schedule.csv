@@ -1,0 +1,105 @@
+Match,Date (UTC),Kickoff (UTC),Kickoff (ET),Team A,Team B,Group / Round,Venue,City,Host Country
+1,2026-06-11,19:00,3:00 PM,Mexico,South Africa,Group A,Estadio Azteca,Mexico City,Mexico
+2,2026-06-12,02:00,10:00 PM,South Korea,Czechia,Group A,Estadio Akron,Guadalajara,Mexico
+3,2026-06-12,19:00,3:00 PM,Canada,Bosnia & Herzegovina,Group B,BMO Field,Toronto,Canada
+4,2026-06-13,01:00,9:00 PM,United States,Paraguay,Group D,SoFi Stadium,Inglewood,USA
+5,2026-06-13,19:00,3:00 PM,Qatar,Switzerland,Group B,Levi's Stadium,Santa Clara,USA
+6,2026-06-13,22:00,6:00 PM,Brazil,Morocco,Group C,MetLife Stadium,East Rutherford,USA
+7,2026-06-14,01:00,9:00 PM,Haiti,Scotland,Group C,Gillette Stadium,Foxborough,USA
+8,2026-06-14,16:00,12:00 PM,Australia,Türkiye,Group D,BC Place,Vancouver,Canada
+9,2026-06-14,17:00,1:00 PM,Germany,Curaçao,Group E,NRG Stadium,Houston,USA
+10,2026-06-14,20:00,4:00 PM,Netherlands,Japan,Group F,AT&T Stadium,Arlington,USA
+11,2026-06-14,23:00,7:00 PM,Ivory Coast,Ecuador,Group E,Lincoln Financial Field,Philadelphia,USA
+12,2026-06-15,02:00,10:00 PM,Sweden,Tunisia,Group F,Estadio BBVA,Monterrey,Mexico
+13,2026-06-15,16:00,12:00 PM,Spain,Cape Verde,Group H,Mercedes-Benz Stadium,Atlanta,USA
+14,2026-06-15,19:00,3:00 PM,Belgium,Egypt,Group G,Lumen Field,Seattle,USA
+15,2026-06-15,22:00,6:00 PM,Saudi Arabia,Uruguay,Group H,Hard Rock Stadium,Miami Gardens,USA
+16,2026-06-16,01:00,9:00 PM,Iran,New Zealand,Group G,SoFi Stadium,Inglewood,USA
+17,2026-06-16,19:00,3:00 PM,France,Senegal,Group I,MetLife Stadium,East Rutherford,USA
+18,2026-06-16,22:00,6:00 PM,Iraq,Norway,Group I,Gillette Stadium,Foxborough,USA
+19,2026-06-17,01:00,9:00 PM,Argentina,Algeria,Group J,Arrowhead Stadium,Kansas City,USA
+20,2026-06-17,04:00,12:00 AM,Austria,Jordan,Group J,Levi's Stadium,Santa Clara,USA
+21,2026-06-17,17:00,1:00 PM,Portugal,DR Congo,Group K,NRG Stadium,Houston,USA
+22,2026-06-17,20:00,4:00 PM,England,Croatia,Group L,AT&T Stadium,Arlington,USA
+23,2026-06-17,23:00,7:00 PM,Ghana,Panama,Group L,BMO Field,Toronto,Canada
+24,2026-06-18,02:00,10:00 PM,Uzbekistan,Colombia,Group K,Estadio Azteca,Mexico City,Mexico
+25,2026-06-18,16:00,12:00 PM,Czechia,South Africa,Group A,Mercedes-Benz Stadium,Atlanta,USA
+26,2026-06-18,19:00,3:00 PM,Switzerland,Bosnia & Herzegovina,Group B,SoFi Stadium,Inglewood,USA
+27,2026-06-18,22:00,6:00 PM,Canada,Qatar,Group B,BC Place,Vancouver,Canada
+28,2026-06-19,01:00,9:00 PM,Mexico,South Korea,Group A,Estadio Akron,Guadalajara,Mexico
+29,2026-06-19,19:00,3:00 PM,United States,Australia,Group D,Lumen Field,Seattle,USA
+30,2026-06-19,22:00,6:00 PM,Scotland,Morocco,Group C,Gillette Stadium,Foxborough,USA
+31,2026-06-20,00:30,8:30 PM,Brazil,Haiti,Group C,Lincoln Financial Field,Philadelphia,USA
+32,2026-06-20,03:00,11:00 PM,Türkiye,Paraguay,Group D,Levi's Stadium,Santa Clara,USA
+33,2026-06-20,17:00,1:00 PM,Netherlands,Sweden,Group F,NRG Stadium,Houston,USA
+34,2026-06-20,20:00,4:00 PM,Germany,Ivory Coast,Group E,BMO Field,Toronto,Canada
+35,2026-06-21,00:00,8:00 PM,Ecuador,Curaçao,Group E,Arrowhead Stadium,Kansas City,USA
+36,2026-06-21,04:00,12:00 AM,Tunisia,Japan,Group F,Estadio BBVA,Monterrey,Mexico
+37,2026-06-21,16:00,12:00 PM,Spain,Saudi Arabia,Group H,Mercedes-Benz Stadium,Atlanta,USA
+38,2026-06-21,19:00,3:00 PM,Belgium,Iran,Group G,SoFi Stadium,Inglewood,USA
+39,2026-06-21,22:00,6:00 PM,Uruguay,Cape Verde,Group H,Hard Rock Stadium,Miami Gardens,USA
+40,2026-06-22,01:00,9:00 PM,New Zealand,Egypt,Group G,BC Place,Vancouver,Canada
+41,2026-06-22,17:00,1:00 PM,Argentina,Austria,Group J,AT&T Stadium,Arlington,USA
+42,2026-06-22,21:00,5:00 PM,France,Iraq,Group I,Lincoln Financial Field,Philadelphia,USA
+43,2026-06-23,00:00,8:00 PM,Norway,Senegal,Group I,MetLife Stadium,East Rutherford,USA
+44,2026-06-23,03:00,11:00 PM,Jordan,Algeria,Group J,Levi's Stadium,Santa Clara,USA
+45,2026-06-23,17:00,1:00 PM,Portugal,Uzbekistan,Group K,NRG Stadium,Houston,USA
+46,2026-06-23,20:00,4:00 PM,England,Ghana,Group L,Gillette Stadium,Foxborough,USA
+47,2026-06-23,23:00,7:00 PM,Panama,Croatia,Group L,BMO Field,Toronto,Canada
+48,2026-06-24,02:00,10:00 PM,Colombia,DR Congo,Group K,Estadio Akron,Guadalajara,Mexico
+49,2026-06-24,19:00,3:00 PM,Switzerland,Canada,Group B,BC Place,Vancouver,Canada
+50,2026-06-24,19:00,3:00 PM,Bosnia & Herzegovina,Qatar,Group B,Lumen Field,Seattle,USA
+51,2026-06-24,22:00,6:00 PM,Scotland,Brazil,Group C,Hard Rock Stadium,Miami Gardens,USA
+52,2026-06-24,22:00,6:00 PM,Morocco,Haiti,Group C,Mercedes-Benz Stadium,Atlanta,USA
+53,2026-06-25,01:00,9:00 PM,Czechia,Mexico,Group A,Estadio Azteca,Mexico City,Mexico
+54,2026-06-25,01:00,9:00 PM,South Africa,South Korea,Group A,Estadio BBVA,Monterrey,Mexico
+55,2026-06-25,20:00,4:00 PM,Curaçao,Ivory Coast,Group E,Lincoln Financial Field,Philadelphia,USA
+56,2026-06-25,20:00,4:00 PM,Ecuador,Germany,Group E,MetLife Stadium,East Rutherford,USA
+57,2026-06-25,23:00,7:00 PM,Japan,Sweden,Group F,AT&T Stadium,Arlington,USA
+58,2026-06-25,23:00,7:00 PM,Tunisia,Netherlands,Group F,Arrowhead Stadium,Kansas City,USA
+59,2026-06-26,02:00,10:00 PM,Türkiye,United States,Group D,SoFi Stadium,Inglewood,USA
+60,2026-06-26,02:00,10:00 PM,Paraguay,Australia,Group D,Levi's Stadium,Santa Clara,USA
+61,2026-06-26,19:00,3:00 PM,Norway,France,Group I,Gillette Stadium,Foxborough,USA
+62,2026-06-26,19:00,3:00 PM,Senegal,Iraq,Group I,BMO Field,Toronto,Canada
+63,2026-06-27,00:00,8:00 PM,Cape Verde,Saudi Arabia,Group H,NRG Stadium,Houston,USA
+64,2026-06-27,00:00,8:00 PM,Uruguay,Spain,Group H,Estadio Akron,Guadalajara,Mexico
+65,2026-06-27,03:00,11:00 PM,Egypt,Iran,Group G,Lumen Field,Seattle,USA
+66,2026-06-27,03:00,11:00 PM,New Zealand,Belgium,Group G,BC Place,Vancouver,Canada
+67,2026-06-27,21:00,5:00 PM,Panama,England,Group L,MetLife Stadium,East Rutherford,USA
+68,2026-06-27,21:00,5:00 PM,Croatia,Ghana,Group L,Lincoln Financial Field,Philadelphia,USA
+69,2026-06-27,23:30,7:30 PM,Colombia,Portugal,Group K,Hard Rock Stadium,Miami Gardens,USA
+70,2026-06-27,23:30,7:30 PM,DR Congo,Uzbekistan,Group K,Mercedes-Benz Stadium,Atlanta,USA
+71,2026-06-28,02:00,10:00 PM,Algeria,Austria,Group J,Arrowhead Stadium,Kansas City,USA
+72,2026-06-28,02:00,10:00 PM,Jordan,Argentina,Group J,AT&T Stadium,Arlington,USA
+73,2026-06-28,19:00,3:00 PM,TBD,TBD,Round of 32,SoFi Stadium,Inglewood,USA
+74,2026-06-29,17:00,1:00 PM,TBD,TBD,Round of 32,NRG Stadium,Houston,USA
+75,2026-06-29,20:30,4:30 PM,TBD,TBD,Round of 32,Gillette Stadium,Foxborough,USA
+76,2026-06-30,01:00,9:00 PM,TBD,TBD,Round of 32,Estadio BBVA,Monterrey,Mexico
+77,2026-06-30,17:00,1:00 PM,TBD,TBD,Round of 32,AT&T Stadium,Arlington,USA
+78,2026-06-30,21:00,5:00 PM,TBD,TBD,Round of 32,MetLife Stadium,East Rutherford,USA
+79,2026-07-01,01:00,9:00 PM,TBD,TBD,Round of 32,Estadio Azteca,Mexico City,Mexico
+80,2026-07-01,16:00,12:00 PM,TBD,TBD,Round of 32,Mercedes-Benz Stadium,Atlanta,USA
+81,2026-07-01,20:00,4:00 PM,TBD,TBD,Round of 32,Lumen Field,Seattle,USA
+82,2026-07-02,00:00,8:00 PM,TBD,TBD,Round of 32,Levi's Stadium,Santa Clara,USA
+83,2026-07-02,19:00,3:00 PM,TBD,TBD,Round of 32,SoFi Stadium,Inglewood,USA
+84,2026-07-02,23:00,7:00 PM,TBD,TBD,Round of 32,BMO Field,Toronto,Canada
+85,2026-07-03,03:00,11:00 PM,TBD,TBD,Round of 32,BC Place,Vancouver,Canada
+86,2026-07-03,18:00,2:00 PM,TBD,TBD,Round of 32,AT&T Stadium,Arlington,USA
+87,2026-07-03,22:00,6:00 PM,TBD,TBD,Round of 32,Hard Rock Stadium,Miami Gardens,USA
+88,2026-07-04,01:30,9:30 PM,TBD,TBD,Round of 32,Arrowhead Stadium,Kansas City,USA
+89,2026-07-04,17:00,1:00 PM,TBD,TBD,Round of 16,NRG Stadium,Houston,USA
+90,2026-07-04,21:00,5:00 PM,TBD,TBD,Round of 16,Lincoln Financial Field,Philadelphia,USA
+91,2026-07-05,20:00,4:00 PM,TBD,TBD,Round of 16,MetLife Stadium,East Rutherford,USA
+92,2026-07-06,00:00,8:00 PM,TBD,TBD,Round of 16,Estadio Azteca,Mexico City,Mexico
+93,2026-07-06,19:00,3:00 PM,TBD,TBD,Round of 16,AT&T Stadium,Arlington,USA
+94,2026-07-07,00:00,8:00 PM,TBD,TBD,Round of 16,Lumen Field,Seattle,USA
+95,2026-07-07,16:00,12:00 PM,TBD,TBD,Round of 16,Mercedes-Benz Stadium,Atlanta,USA
+96,2026-07-07,20:00,4:00 PM,TBD,TBD,Round of 16,BC Place,Vancouver,Canada
+97,2026-07-09,20:00,4:00 PM,TBD,TBD,Quarter-final,Gillette Stadium,Foxborough,USA
+98,2026-07-10,19:00,3:00 PM,TBD,TBD,Quarter-final,SoFi Stadium,Inglewood,USA
+99,2026-07-11,21:00,5:00 PM,TBD,TBD,Quarter-final,Hard Rock Stadium,Miami Gardens,USA
+100,2026-07-12,01:00,9:00 PM,TBD,TBD,Quarter-final,Arrowhead Stadium,Kansas City,USA
+101,2026-07-14,19:00,3:00 PM,TBD,TBD,Semi-final,AT&T Stadium,Arlington,USA
+102,2026-07-15,19:00,3:00 PM,TBD,TBD,Semi-final,Mercedes-Benz Stadium,Atlanta,USA
+103,2026-07-18,21:00,5:00 PM,TBD,TBD,Third Place,Hard Rock Stadium,Miami Gardens,USA
+104,2026-07-19,19:00,3:00 PM,TBD,TBD,Final,MetLife Stadium,East Rutherford,USA

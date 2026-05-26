@@ -1,6 +1,7 @@
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
+import csv
+from datetime import datetime
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from apps.matches.models import Match
 from apps.teams.models import Team, WorldCupGroup
@@ -123,54 +124,64 @@ SPANISH_ALIASES = {
     'Panama': 'Panamá',
 }
 
-VENUES = [
-    ('Mexico City Stadium', 'America/Mexico_City'),
-    ('Estadio Guadalajara', 'America/Mexico_City'),
-    ('Toronto Stadium', 'America/Toronto'),
-    ('Los Angeles Stadium', 'America/Los_Angeles'),
-    ('Boston Stadium', 'America/New_York'),
-    ('BC Place Vancouver', 'America/Vancouver'),
-    ('New York New Jersey Stadium', 'America/New_York'),
-    ('San Francisco Bay Area Stadium', 'America/Los_Angeles'),
-    ('Seattle Stadium', 'America/Los_Angeles'),
-    ('Dallas Stadium', 'America/Chicago'),
-    ('Houston Stadium', 'America/Chicago'),
-    ('Kansas City Stadium', 'America/Chicago'),
-    ('Atlanta Stadium', 'America/New_York'),
-    ('Miami Stadium', 'America/New_York'),
-    ('Philadelphia Stadium', 'America/New_York'),
-    ('Monterrey Stadium', 'America/Mexico_City'),
-]
+SCHEDULE_CSV_PATH = settings.BASE_DIR / 'apps' / 'matches' / 'data' / 'world_cup_2026_schedule.csv'
 
-GROUP_ROUNDS = [
-    [(0, 1), (2, 3)],
-    [(0, 2), (1, 3)],
-    [(0, 3), (1, 2)],
-]
-GROUP_STAGE_START_UTC = datetime(2026, 6, 11, 19, 0, tzinfo=ZoneInfo('UTC'))
+SCHEDULE_TEAM_NAMES = {
+    'Bosnia & Herzegovina': 'Bosnia and Herzegovina',
+    'Cape Verde': 'Cabo Verde',
+    'DR Congo': 'Congo DR',
+    'Iran': 'IR Iran',
+    'Ivory Coast': "Côte d'Ivoire",
+    'South Korea': 'Korea Republic',
+    'United States': 'USA',
+}
 
-OFFICIAL_GROUP_FIXTURE_OVERRIDES = {
-    ('Argentina', 'Algeria'): {
-        'kickoff_at': datetime(2026, 6, 17, 1, 0, tzinfo=ZoneInfo('UTC')),
-        'venue': 'Kansas City Stadium',
-        'venue_timezone': 'America/Chicago',
-    },
-    ('Argentina', 'Austria'): {
-        'kickoff_at': datetime(2026, 6, 22, 17, 0, tzinfo=ZoneInfo('UTC')),
-        'venue': 'Dallas Stadium',
-        'venue_timezone': 'America/Chicago',
-    },
-    ('Argentina', 'Jordan'): {
-        'kickoff_at': datetime(2026, 6, 28, 2, 0, tzinfo=ZoneInfo('UTC')),
-        'venue': 'Dallas Stadium',
-        'venue_timezone': 'America/Chicago',
-    },
+VENUE_TIMEZONES_BY_CITY = {
+    'Arlington': 'America/Chicago',
+    'Atlanta': 'America/New_York',
+    'East Rutherford': 'America/New_York',
+    'Foxborough': 'America/New_York',
+    'Guadalajara': 'America/Mexico_City',
+    'Houston': 'America/Chicago',
+    'Inglewood': 'America/Los_Angeles',
+    'Kansas City': 'America/Chicago',
+    'Mexico City': 'America/Mexico_City',
+    'Miami Gardens': 'America/New_York',
+    'Monterrey': 'America/Mexico_City',
+    'Philadelphia': 'America/New_York',
+    'Santa Clara': 'America/Los_Angeles',
+    'Seattle': 'America/Los_Angeles',
+    'Toronto': 'America/Toronto',
+    'Vancouver': 'America/Vancouver',
+}
+
+ROUND_PHASES = {
+    'Round of 32': Match.Phase.ROUND_OF_32,
+    'Round of 16': Match.Phase.ROUND_OF_16,
+    'Quarter-final': Match.Phase.QUARTER_FINAL,
+    'Semi-final': Match.Phase.SEMI_FINAL,
+    'Third Place': Match.Phase.THIRD_PLACE,
+    'Final': Match.Phase.FINAL,
 }
 
 
-def aware_from_local(year, month, day, hour, minute, tz_name):
-    local_dt = datetime(year, month, day, hour, minute, tzinfo=ZoneInfo(tz_name))
-    return local_dt.astimezone(ZoneInfo('UTC'))
+def team_name_from_schedule(name):
+    return SCHEDULE_TEAM_NAMES.get(name, name)
+
+
+def kickoff_from_schedule(row):
+    return datetime.fromisoformat(f"{row['Date (UTC)']}T{row['Kickoff (UTC)']}:00+00:00")
+
+
+def phase_from_schedule(round_name):
+    if round_name.startswith('Group '):
+        return Match.Phase.GROUP_STAGE
+    return ROUND_PHASES[round_name]
+
+
+def schedule_rows():
+    with SCHEDULE_CSV_PATH.open(newline='', encoding='utf-8-sig') as schedule_file:
+        return list(csv.DictReader(schedule_file))
 
 
 class Command(BaseCommand):
@@ -195,78 +206,29 @@ class Command(BaseCommand):
                     },
                 )
 
-        match_number = 1
-        for round_index, round_pairings in enumerate(GROUP_ROUNDS):
-            for _group_index, (letter, group) in enumerate(groups):
-                teams = [Team.objects.get(fifa_code=f'{letter}{position}') for position in range(1, 5)]
-                for home_idx, away_idx in round_pairings:
-                    venue, venue_timezone = VENUES[(match_number - 1) % len(VENUES)]
-                    slot = match_number - 1
-                    kickoff_at = GROUP_STAGE_START_UTC + timedelta(
-                        days=(round_index * 7) + ((slot % 24) // 4),
-                        hours=(slot % 4) * 3,
-                    )
-                    override = OFFICIAL_GROUP_FIXTURE_OVERRIDES.get((teams[home_idx].name, teams[away_idx].name))
-                    if override:
-                        kickoff_at = override['kickoff_at']
-                        venue = override['venue']
-                        venue_timezone = override['venue_timezone']
-                    Match.objects.update_or_create(
-                        match_number=match_number,
-                        defaults={
-                            'phase': Match.Phase.GROUP_STAGE,
-                            'group': group,
-                            'home_team': teams[home_idx],
-                            'away_team': teams[away_idx],
-                            'home_team_placeholder': '',
-                            'away_team_placeholder': '',
-                            'kickoff_at': kickoff_at,
-                            'venue': venue,
-                            'venue_timezone': venue_timezone,
-                        },
-                    )
-                    match_number += 1
-
-        phases = (
-            [(Match.Phase.ROUND_OF_32, 16)]
-            + [(Match.Phase.ROUND_OF_16, 8)]
-            + [(Match.Phase.QUARTER_FINAL, 4)]
-            + [(Match.Phase.SEMI_FINAL, 2)]
-            + [(Match.Phase.THIRD_PLACE, 1)]
-            + [(Match.Phase.FINAL, 1)]
-        )
-        slot = 1
-        knockout_start = datetime(2026, 7, 1, 15, 0)
-        for phase, amount in phases:
-            for phase_index in range(amount):
-                venue, venue_timezone = VENUES[(match_number - 1) % len(VENUES)]
-                day_offset = slot // 4
-                if phase == Match.Phase.FINAL:
-                    venue = 'New York New Jersey Stadium'
-                    venue_timezone = 'America/New_York'
-                    kickoff_at = aware_from_local(2026, 7, 19, 15, 0, venue_timezone)
-                elif phase == Match.Phase.THIRD_PLACE:
-                    venue = 'Miami Stadium'
-                    venue_timezone = 'America/New_York'
-                    kickoff_at = aware_from_local(2026, 7, 18, 17, 0, venue_timezone)
-                else:
-                    local_dt = knockout_start + timedelta(days=day_offset, hours=(phase_index % 3) * 3)
-                    kickoff_at = aware_from_local(local_dt.year, local_dt.month, local_dt.day, local_dt.hour, local_dt.minute, venue_timezone)
-                Match.objects.update_or_create(
-                    match_number=match_number,
-                    defaults={
-                        'phase': phase,
-                        'group': None,
-                        'home_team': None,
-                        'away_team': None,
-                        'home_team_placeholder': f'{phase.replace("_", " ").title()} equipo local {slot}',
-                        'away_team_placeholder': f'{phase.replace("_", " ").title()} equipo visitante {slot}',
-                        'kickoff_at': kickoff_at,
-                        'venue': venue,
-                        'venue_timezone': venue_timezone,
-                    },
-                )
-                match_number += 1
-                slot += 1
+        for row in schedule_rows():
+            match_number = int(row['Match'])
+            round_name = row['Group / Round']
+            phase = phase_from_schedule(round_name)
+            group = WorldCupGroup.objects.get(name=round_name) if phase == Match.Phase.GROUP_STAGE else None
+            home_name = team_name_from_schedule(row['Team A'])
+            away_name = team_name_from_schedule(row['Team B'])
+            home_team = Team.objects.filter(name=home_name).first() if home_name != 'TBD' else None
+            away_team = Team.objects.filter(name=away_name).first() if away_name != 'TBD' else None
+            venue_timezone = VENUE_TIMEZONES_BY_CITY[row['City']]
+            Match.objects.update_or_create(
+                match_number=match_number,
+                defaults={
+                    'phase': phase,
+                    'group': group,
+                    'home_team': home_team,
+                    'away_team': away_team,
+                    'home_team_placeholder': '' if home_team else f'{round_name} equipo local',
+                    'away_team_placeholder': '' if away_team else f'{round_name} equipo visitante',
+                    'kickoff_at': kickoff_from_schedule(row),
+                    'venue': row['Venue'],
+                    'venue_timezone': venue_timezone,
+                },
+            )
 
         self.stdout.write(self.style.SUCCESS('Estructura sembrada: 12 grupos sorteados, 48 equipos, 104 partidos con zona horaria de sede.'))
