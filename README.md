@@ -109,6 +109,33 @@ El conteo esperado después del seed es:
 12 48 104
 ```
 
+## Actualizar fixture en servidor
+
+Cuando cambie el fixture versionado o se corrijan horarios, ejecutar en Railway/servidor:
+
+```bash
+python manage.py migrate
+python manage.py seed_worldcup_structure
+```
+
+Para verificar el conteo:
+
+```bash
+python manage.py shell -c "from apps.teams.models import WorldCupGroup, Team; from apps.matches.models import Match; print(WorldCupGroup.objects.count(), Team.objects.count(), Match.objects.count())"
+```
+
+El resultado esperado es:
+
+```text
+12 48 104
+```
+
+Si ya había resultados cargados o sincronizados, recalcular puntos después:
+
+```bash
+python manage.py recalculate_points
+```
+
 ## Railway
 
 Variables recomendadas:
