@@ -11,6 +11,26 @@
 
 <div class="row g-4">
   <div class="col-lg-4">
+    <section class="panel mb-4">
+      <h2>Operaciones del servidor</h2>
+      <div class="d-grid gap-2">
+        <form method="post" action="{% url 'tournaments:staff_update_fixture' %}">
+          {% csrf_token %}
+          <button class="btn btn-outline-primary w-100" type="submit">
+            <i aria-hidden="true" class="bi bi-calendar-check"></i> Actualizar fixture
+          </button>
+        </form>
+        <form method="post" action="{% url 'tournaments:staff_sync_results' %}">
+          {% csrf_token %}
+          <button class="btn btn-outline-primary w-100" type="submit">
+            <i aria-hidden="true" class="bi bi-cloud-arrow-down"></i> Traer resultados API
+          </button>
+        </form>
+      </div>
+      <p class="text-muted small mb-0 mt-3">
+        Actualizar fixture ejecuta el seed versionado. Traer resultados consulta TheSportsDB y recalcula puntos.
+      </p>
+    </section>
     <section class="panel">
       <h2>Crear torneo</h2>
       <form method="post" class="stacked-form border-0 shadow-none p-0">

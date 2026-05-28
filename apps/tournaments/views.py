@@ -1,13 +1,16 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
+from django.core.management import call_command
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from apps.matches.models import Match
+from apps.matches.services.thesportsdb import sync_results
 from apps.predictions.forms import PredictionForm
 from apps.predictions.models import Prediction
+from apps.predictions.services import recalculate_predictions
 
 from .forms import JoinTournamentForm, StaffTournamentForm
 from .models import FriendTournament, TournamentMembership
@@ -116,6 +119,37 @@ def staff_toggle_tournament_active(request, slug):
     tournament.save(update_fields=['is_active', 'updated_at'])
     status = 'activado' if tournament.is_active else 'desactivado'
     messages.success(request, f'Torneo {status}.')
+    return redirect('tournaments:staff_admin')
+
+
+@staff_member_required
+def staff_update_fixture(request):
+    if request.method != 'POST':
+        return redirect('tournaments:staff_admin')
+    try:
+        call_command('seed_worldcup_structure')
+    except Exception as exc:
+        messages.error(request, f'No se pudo actualizar el fixture: {exc}')
+    else:
+        messages.success(request, 'Fixture actualizado correctamente: 12 grupos, 48 equipos y 104 partidos.')
+    return redirect('tournaments:staff_admin')
+
+
+@staff_member_required
+def staff_sync_results(request):
+    if request.method != 'POST':
+        return redirect('tournaments:staff_admin')
+    try:
+        result = sync_results(days_back=1, days_forward=1)
+        recalculated = recalculate_predictions()
+    except Exception as exc:
+        messages.error(request, f'No se pudieron traer los resultados: {exc}')
+    else:
+        messages.success(
+            request,
+            f"Resultados sincronizados: {result['updated_count']} partidos actualizados, "
+            f"{result['seen_count']} eventos vistos, {recalculated} pronósticos recalculados.",
+        )
     return redirect('tournaments:staff_admin')
 
 

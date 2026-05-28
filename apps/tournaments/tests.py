@@ -15,6 +15,7 @@ from apps.teams.models import Team
 
 from .models import FriendTournament, TournamentMembership
 from .services import leaderboard_for_tournament
+from . import views
 
 
 class MvpFlowTests(TestCase):
@@ -115,6 +116,61 @@ class MvpFlowTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertIn('/admin/login/', response.url)
+
+    def test_staff_can_trigger_fixture_update_from_panel(self):
+        staff = User.objects.create_superuser('fixture_staff', 'fixture_staff@example.com', 'pass12345')
+        self.client.force_login(staff)
+        calls = []
+
+        def fake_call_command(command_name):
+            calls.append(command_name)
+
+        original_call_command = views.call_command
+        views.call_command = fake_call_command
+        try:
+            response = self.client.post(reverse('tournaments:staff_update_fixture'))
+        finally:
+            views.call_command = original_call_command
+
+        self.assertRedirects(response, reverse('tournaments:staff_admin'))
+        self.assertEqual(calls, ['seed_worldcup_structure'])
+
+    def test_staff_can_trigger_api_result_sync_from_panel(self):
+        staff = User.objects.create_superuser('sync_staff', 'sync_staff@example.com', 'pass12345')
+        self.client.force_login(staff)
+        calls = []
+
+        def fake_sync_results(days_back, days_forward):
+            calls.append(('sync', days_back, days_forward))
+            return {'updated_count': 2, 'seen_count': 4}
+
+        def fake_recalculate_predictions():
+            calls.append(('recalculate',))
+            return 5
+
+        original_sync_results = views.sync_results
+        original_recalculate_predictions = views.recalculate_predictions
+        views.sync_results = fake_sync_results
+        views.recalculate_predictions = fake_recalculate_predictions
+        try:
+            response = self.client.post(reverse('tournaments:staff_sync_results'))
+        finally:
+            views.sync_results = original_sync_results
+            views.recalculate_predictions = original_recalculate_predictions
+
+        self.assertRedirects(response, reverse('tournaments:staff_admin'))
+        self.assertEqual(calls, [('sync', 1, 1), ('recalculate',)])
+
+    def test_regular_user_cannot_trigger_staff_operations(self):
+        self.client.force_login(self.user)
+
+        fixture_response = self.client.post(reverse('tournaments:staff_update_fixture'))
+        sync_response = self.client.post(reverse('tournaments:staff_sync_results'))
+
+        self.assertEqual(fixture_response.status_code, 302)
+        self.assertEqual(sync_response.status_code, 302)
+        self.assertIn('/admin/login/', fixture_response.url)
+        self.assertIn('/admin/login/', sync_response.url)
 
     def test_user_registers_logs_in_joins_and_sees_only_their_tournaments(self):
         tournament = FriendTournament.objects.create(name='Visible Tournament')

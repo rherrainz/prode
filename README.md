@@ -136,6 +136,11 @@ Si ya había resultados cargados o sincronizados, recalcular puntos después:
 python manage.py recalculate_points
 ```
 
+También se puede hacer desde `/tournaments/admin/` con un usuario staff usando:
+
+- `Actualizar fixture`
+- `Traer resultados API`
+
 ## Railway
 
 Variables recomendadas:
