@@ -2,8 +2,8 @@
 {% block content %}
 <h1>Tabla de posiciones</h1>
 <p class="text-muted">{{ tournament.name }}</p>
-<div class="table-responsive mobile-stack-table">
-  <table class="table align-middle">
+<div class="table-responsive">
+  <table class="table align-middle leaderboard-table">
     <thead><tr><th>Posición</th><th>Participante</th><th class="text-end">Puntos</th></tr></thead>
     <tbody>
       {% for row in rows %}

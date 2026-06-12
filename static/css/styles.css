@@ -584,6 +584,10 @@ a:hover {
     min-width: 720px;
   }
 
+  .leaderboard-table {
+    min-width: 0;
+  }
+
   .mobile-stack-table {
     background: transparent;
     border: 0;
