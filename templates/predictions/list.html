@@ -20,7 +20,7 @@
         <h2 class="mb-0">{{ round.label }}</h2>
         <span class="badge-accent">{{ round.matches|length }} partidos</span>
       </div>
-      <div class="table-responsive shadow-none">
+      <div class="table-responsive mobile-stack-table shadow-none">
         <table class="table align-middle prediction-table">
           <thead>
             <tr>
@@ -35,10 +35,10 @@
           <tbody>
             {% for item in round.matches %}
               <tr>
-                <td><span class="match-status">#{{ item.match.match_number }}</span></td>
-                <td>{% team_label item.match.home_team item.match.home_team_placeholder %} <span class="text-muted mx-1">vs</span> {% team_label item.match.away_team item.match.away_team_placeholder %}</td>
-                <td>{{ item.match.kickoff_at|match_datetime:viewer_timezone }}</td>
-                <td>
+                <td data-label="#"><span class="match-status">#{{ item.match.match_number }}</span></td>
+                <td data-label="Partido">{% team_label item.match.home_team item.match.home_team_placeholder %} <span class="text-muted mx-1">vs</span> {% team_label item.match.away_team item.match.away_team_placeholder %}</td>
+                <td data-label="Tu horario">{{ item.match.kickoff_at|match_datetime:viewer_timezone }}</td>
+                <td data-label="Pronóstico">
                   {% if item.locked %}
                     <span class="badge-gold"><i aria-hidden="true" class="bi bi-lock"></i> Bloqueado</span>
                     {% if item.prediction %}
@@ -62,8 +62,8 @@
                     </div>
                   {% endif %}
                 </td>
-                <td><span class="match-score">{{ item.match.score_label }}</span></td>
-                <td><span class="leaderboard-points">{{ item.prediction.points|default:0 }}</span></td>
+                <td data-label="Resultado"><span class="match-score">{{ item.match.score_label }}</span></td>
+                <td data-label="Puntos"><span class="leaderboard-points">{{ item.prediction.points|default:0 }}</span></td>
               </tr>
             {% endfor %}
           </tbody>

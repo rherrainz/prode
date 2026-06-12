@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.management import call_command
@@ -18,6 +19,7 @@ from .services import join_tournament_by_code, leaderboard_for_tournament, user_
 
 
 SCORE_CHOICES = range(0, 11)
+User = get_user_model()
 
 
 def _prediction_round_label(match):
@@ -49,6 +51,23 @@ def _prediction_rounds(matches, predictions_by_match):
         })
     if current_matches:
         rounds.append({'label': current_label, 'matches': current_matches})
+    return rounds
+
+
+def _readonly_prediction_rounds(predictions):
+    rounds = []
+    current_label = None
+    current_predictions = []
+    for prediction in predictions:
+        label = _prediction_round_label(prediction.match)
+        if label != current_label:
+            if current_predictions:
+                rounds.append({'label': current_label, 'predictions': current_predictions})
+            current_label = label
+            current_predictions = []
+        current_predictions.append(prediction)
+    if current_predictions:
+        rounds.append({'label': current_label, 'predictions': current_predictions})
     return rounds
 
 
@@ -276,6 +295,38 @@ def leaderboard(request, slug):
     if tournament is None:
         return HttpResponseForbidden('No tenés permiso para ver este torneo.')
     return render(request, 'leaderboard/detail.html', {'tournament': tournament, 'rows': leaderboard_for_tournament(tournament)})
+
+
+@login_required
+def member_predictions(request, slug, user_id):
+    tournament = _member_tournament_or_forbidden(request, slug)
+    if tournament is None:
+        return HttpResponseForbidden('No tenés permiso para ver este torneo.')
+
+    viewed_user = get_object_or_404(User, pk=user_id)
+    if not TournamentMembership.objects.filter(tournament=tournament, user=viewed_user, is_active=True).exists():
+        return HttpResponseForbidden('Ese usuario no participa en este torneo.')
+
+    predictions = (
+        Prediction.objects.filter(tournament=tournament, user=viewed_user)
+        .select_related('match', 'match__home_team', 'match__away_team', 'match__group')
+        .order_by('match__match_number')
+    )
+    can_view_future = request.user.is_staff
+    if not can_view_future:
+        predictions = predictions.filter(
+            match__status=Match.Status.FINISHED,
+            match__home_score__isnull=False,
+            match__away_score__isnull=False,
+            calculated_at__isnull=False,
+        )
+
+    return render(request, 'predictions/member_detail.html', {
+        'tournament': tournament,
+        'viewed_user': viewed_user,
+        'rounds': _readonly_prediction_rounds(predictions),
+        'can_view_future': can_view_future,
+    })
 
 
 @login_required

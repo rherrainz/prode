@@ -2,15 +2,17 @@
 {% block content %}
 <h1>Tabla de posiciones</h1>
 <p class="text-muted">{{ tournament.name }}</p>
-<div class="table-responsive">
+<div class="table-responsive mobile-stack-table">
   <table class="table align-middle">
-    <thead><tr><th>Posición</th><th>Participante</th><th>Puntos</th></tr></thead>
+    <thead><tr><th>Posición</th><th>Participante</th><th class="text-end">Puntos</th></tr></thead>
     <tbody>
       {% for row in rows %}
         <tr>
-          <td><span class="leaderboard-position">{{ row.position }}</span></td>
-          <td>{{ row.user.username }}</td>
-          <td><span class="leaderboard-points">{{ row.points }}</span></td>
+          <td data-label="Posición"><span class="leaderboard-position">{{ row.position }}</span></td>
+          <td data-label="Participante">
+            <a class="link-strong" href="{% url 'tournaments:member_predictions' tournament.slug row.user.id %}">{{ row.user.username }}</a>
+          </td>
+          <td class="text-end" data-label="Puntos"><span class="leaderboard-points">{{ row.points }}</span></td>
         </tr>
       {% empty %}
         <tr><td colspan="3">No hay participantes.</td></tr>

@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load match_time match_display %}
+{% block content %}
+{% user_timezone as viewer_timezone %}
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+  <div>
+    <h1>Pronósticos de {{ viewed_user.username }}</h1>
+    <p class="text-muted mb-0">{{ tournament.name }}</p>
+  </div>
+  <a class="btn btn-outline-primary" href="{% url 'tournaments:leaderboard' tournament.slug %}">
+    <i aria-hidden="true" class="bi bi-bar-chart"></i> Tabla
+  </a>
+</div>
+
+{% if not can_view_future %}
+  <section class="panel mb-4">
+    <p class="mb-0 text-muted">Se muestran solo partidos finalizados y puntuados.</p>
+  </section>
+{% endif %}
+
+{% for round in rounds %}
+  <section class="panel prediction-round">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+      <h2 class="mb-0">{{ round.label }}</h2>
+      <span class="badge-accent">{{ round.predictions|length }} pronósticos</span>
+    </div>
+    <div class="table-responsive mobile-stack-table shadow-none">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Partido</th>
+            <th>Tu horario</th>
+            <th>Pronóstico</th>
+            <th>Resultado</th>
+            <th>Puntos</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for prediction in round.predictions %}
+            <tr>
+              <td data-label="#"><span class="match-status">#{{ prediction.match.match_number }}</span></td>
+              <td data-label="Partido">{% team_label prediction.match.home_team prediction.match.home_team_placeholder %} <span class="text-muted mx-1">vs</span> {% team_label prediction.match.away_team prediction.match.away_team_placeholder %}</td>
+              <td data-label="Tu horario">{{ prediction.match.kickoff_at|match_datetime:viewer_timezone }}</td>
+              <td data-label="Pronóstico"><span class="match-score">{{ prediction.score_label }}</span></td>
+              <td data-label="Resultado"><span class="match-score">{{ prediction.match.score_label }}</span></td>
+              <td data-label="Puntos"><span class="leaderboard-points">{{ prediction.points }}</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% empty %}
+  <section class="panel">
+    <p class="mb-0">No hay pronósticos visibles para este participante.</p>
+  </section>
+{% endfor %}
+{% endblock %}

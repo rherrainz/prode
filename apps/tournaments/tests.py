@@ -215,6 +215,7 @@ class MvpFlowTests(TestCase):
             reverse('tournaments:predictions', kwargs={'slug': tournament.slug}),
             reverse('tournaments:leaderboard', kwargs={'slug': tournament.slug}),
             reverse('tournaments:members', kwargs={'slug': tournament.slug}),
+            reverse('tournaments:member_predictions', kwargs={'slug': tournament.slug, 'user_id': self.other_user.id}),
             reverse('tournaments:match_detail', kwargs={'slug': tournament.slug, 'match_id': self.future_match.id}),
         ]
 
@@ -316,6 +317,66 @@ class MvpFlowTests(TestCase):
         rows_b = leaderboard_for_tournament(tournament_b)
         self.assertEqual([(row['user'].username, row['points']) for row in rows_a], [('player', 5), ('other', 2)])
         self.assertEqual([(row['user'].username, row['points']) for row in rows_b], [('player', 0)])
+
+    def test_member_prediction_detail_for_regular_user_only_shows_scored_finished_matches(self):
+        tournament = FriendTournament.objects.create(name='Visible Predictions Tournament')
+        TournamentMembership.objects.create(tournament=tournament, user=self.user)
+        TournamentMembership.objects.create(tournament=tournament, user=self.other_user)
+        future_prediction = Prediction.objects.create(
+            tournament=tournament,
+            user=self.other_user,
+            match=self.future_match,
+            predicted_home_score=4,
+            predicted_away_score=4,
+        )
+        finished_prediction = Prediction.objects.create(
+            tournament=tournament,
+            user=self.other_user,
+            match=self.locked_match,
+            predicted_home_score=1,
+            predicted_away_score=0,
+        )
+        self.locked_match.status = Match.Status.FINISHED
+        self.locked_match.home_score = 1
+        self.locked_match.away_score = 0
+        self.locked_match.save()
+        recalculate_predictions(tournament=tournament)
+        finished_prediction.refresh_from_db()
+        future_prediction.refresh_from_db()
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('tournaments:member_predictions', kwargs={
+            'slug': tournament.slug,
+            'user_id': self.other_user.id,
+        }))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Pronósticos de other')
+        self.assertContains(response, '1 - 0')
+        self.assertContains(response, '5')
+        self.assertNotContains(response, '4 - 4')
+
+    def test_member_prediction_detail_for_staff_shows_future_matches(self):
+        staff = User.objects.create_superuser('staff_viewer', 'staff_viewer@example.com', 'pass12345')
+        tournament = FriendTournament.objects.create(name='Staff Visible Predictions Tournament')
+        TournamentMembership.objects.create(tournament=tournament, user=staff)
+        TournamentMembership.objects.create(tournament=tournament, user=self.other_user)
+        Prediction.objects.create(
+            tournament=tournament,
+            user=self.other_user,
+            match=self.future_match,
+            predicted_home_score=4,
+            predicted_away_score=4,
+        )
+        self.client.force_login(staff)
+
+        response = self.client.get(reverse('tournaments:member_predictions', kwargs={
+            'slug': tournament.slug,
+            'user_id': self.other_user.id,
+        }))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '4 - 4')
 
     def test_seed_does_not_schedule_same_team_twice_on_same_day(self):
         Match.objects.all().delete()
