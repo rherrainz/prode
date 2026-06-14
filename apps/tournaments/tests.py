@@ -403,6 +403,20 @@ class MvpFlowTests(TestCase):
         self.assertEqual(match.venue_timezone, 'America/Chicago')
         self.assertEqual(argentina_time.strftime('%Y-%m-%d %H:%M'), '2026-06-22 14:00')
 
+    def test_seed_sets_australia_turkiye_at_01_argentina_time(self):
+        Match.objects.all().delete()
+        Team.objects.all().delete()
+        SeedWorldCupCommand().handle()
+
+        match = Match.objects.get(match_number=8, home_team__name='Australia', away_team__name='Türkiye')
+        argentina_time = match.kickoff_at.astimezone(ZoneInfo('America/Buenos_Aires'))
+        venue_time = match.kickoff_at.astimezone(ZoneInfo(match.venue_timezone))
+
+        self.assertEqual(match.venue, 'BC Place')
+        self.assertEqual(match.venue_timezone, 'America/Vancouver')
+        self.assertEqual(argentina_time.strftime('%Y-%m-%d %H:%M'), '2026-06-14 01:00')
+        self.assertEqual(venue_time.strftime('%Y-%m-%d %H:%M'), '2026-06-13 21:00')
+
     def test_thesportsdb_sync_updates_finished_result(self):
         self.future_match.external_id = 'thesportsdb:fixture-1'
         self.future_match.save(update_fields=['external_id'])

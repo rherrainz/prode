@@ -8,6 +8,10 @@ from .models import ApiSyncLog, Match
 @admin.action(description='Marcar partidos seleccionados como finalizados')
 def mark_finished(modeladmin, request, queryset):
     queryset.update(status=Match.Status.FINISHED)
+    total = 0
+    for match in queryset:
+        total += recalculate_predictions(match=match)
+    modeladmin.message_user(request, f'Se marcaron los partidos como finalizados y se recalcularon {total} pronósticos.')
 
 
 @admin.action(description='Recalcular pronósticos de partidos seleccionados')
@@ -28,6 +32,14 @@ class MatchAdmin(admin.ModelAdmin):
     @admin.display(description='Resultado')
     def score(self, obj):
         return obj.score_label
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        result_fields = {'status', 'home_score', 'away_score', 'winner'}
+        if change and result_fields.intersection(form.changed_data):
+            total = recalculate_predictions(match=obj)
+            if total:
+                self.message_user(request, f'Se recalcularon {total} pronósticos para este partido.')
 
 
 @admin.register(ApiSyncLog)
