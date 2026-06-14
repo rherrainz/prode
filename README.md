@@ -191,8 +191,7 @@ python manage.py sync_thesportsdb_results
 Para Railway Cron cada 2 horas:
 
 ```bash
-python manage.py sync_thesportsdb_results --days-back 1 --days-forward 1
-python manage.py recalculate_points
+python manage.py sync_results_and_recalculate --days-back 1 --days-forward 1
 ```
 
 ## Futuro Google Login
