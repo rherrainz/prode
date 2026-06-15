@@ -1,7 +1,8 @@
-from datetime import timedelta
+from datetime import datetime, time, timedelta, timezone as datetime_timezone
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 import json
+from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.utils import timezone
@@ -19,6 +20,8 @@ TEAM_ALIASES = {
     'South Korea': 'Korea Republic',
     'Turkey': 'Türkiye',
 }
+
+EVENT_DATE_TIMEZONE = ZoneInfo('America/New_York')
 
 
 def _base_url():
@@ -39,6 +42,19 @@ def _fetch_events_for_day(day):
     with urlopen(request, timeout=20) as response:
         payload = json.loads(response.read().decode('utf-8'))
     return endpoint, payload.get('events') or []
+
+
+def _sync_days(base_date, days_back, days_forward):
+    days = {base_date + timedelta(days=offset) for offset in range(-days_back, days_forward + 1)}
+    start_day = min(days)
+    end_day = max(days) + timedelta(days=1)
+    start_at = datetime.combine(start_day, time.min, tzinfo=datetime_timezone.utc)
+    end_at = datetime.combine(end_day, time.min, tzinfo=datetime_timezone.utc)
+
+    for match in Match.objects.filter(kickoff_at__gte=start_at, kickoff_at__lt=end_at).only('kickoff_at'):
+        days.add(match.kickoff_at.astimezone(EVENT_DATE_TIMEZONE).date())
+
+    return sorted(days)
 
 
 def _match_for_event(event):
@@ -69,8 +85,7 @@ def sync_results(days_back=1, days_forward=1, base_date=None, dry_run=False):
     seen_count = 0
     messages = []
 
-    for offset in range(-days_back, days_forward + 1):
-        day = base_date + timedelta(days=offset)
+    for day in _sync_days(base_date, days_back, days_forward):
         endpoint, events = _fetch_events_for_day(day)
         request_count += 1
         seen_count += len(events)

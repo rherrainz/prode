@@ -1,5 +1,5 @@
 from io import StringIO
-from datetime import timedelta
+from datetime import date, datetime, timedelta, timezone as datetime_timezone
 
 from django.contrib import admin
 from django.contrib.auth.models import User
@@ -10,6 +10,7 @@ from django.utils import timezone
 from apps.matches.admin import MatchAdmin, mark_finished
 from apps.matches.management.commands import sync_results_and_recalculate
 from apps.matches.models import Match
+from apps.matches.services import thesportsdb
 from apps.predictions.models import Prediction
 from apps.teams.models import Team
 from apps.tournaments.models import FriendTournament
@@ -80,6 +81,46 @@ class SyncResultsAndRecalculateCommandTests(TestCase):
             sync_results_and_recalculate.recalculate_predictions = original_recalculate_predictions
 
         self.assertEqual(calls, [('sync', True)])
+
+
+class TheSportsDBSyncDateTests(TestCase):
+    def test_sync_uses_event_timezone_date_for_utc_next_day_matches(self):
+        sweden = Team.objects.create(name='Sweden', fifa_code='SWE')
+        tunisia = Team.objects.create(name='Tunisia', fifa_code='TUN')
+        match = Match.objects.create(
+            match_number=12,
+            phase=Match.Phase.GROUP_STAGE,
+            home_team=sweden,
+            away_team=tunisia,
+            kickoff_at=datetime(2026, 6, 15, 2, 0, tzinfo=datetime_timezone.utc),
+        )
+        requested_days = []
+
+        def fake_fetch_events_for_day(day):
+            requested_days.append(day)
+            if day == date(2026, 6, 14):
+                return 'fake-endpoint', [{
+                    'idEvent': 'sweden-tunisia',
+                    'strHomeTeam': 'Sweden',
+                    'strAwayTeam': 'Tunisia',
+                    'intHomeScore': '1',
+                    'intAwayScore': '0',
+                }]
+            return 'fake-endpoint', []
+
+        original_fetch = thesportsdb._fetch_events_for_day
+        thesportsdb._fetch_events_for_day = fake_fetch_events_for_day
+        try:
+            result = thesportsdb.sync_results(days_back=0, days_forward=0, base_date=date(2026, 6, 15))
+        finally:
+            thesportsdb._fetch_events_for_day = original_fetch
+
+        match.refresh_from_db()
+        self.assertEqual(requested_days, [date(2026, 6, 14), date(2026, 6, 15)])
+        self.assertEqual(result['updated_count'], 1)
+        self.assertEqual(match.status, Match.Status.FINISHED)
+        self.assertEqual(match.home_score, 1)
+        self.assertEqual(match.away_score, 0)
 
 
 class MatchAdminRecalculationTests(TestCase):
