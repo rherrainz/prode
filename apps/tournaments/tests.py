@@ -318,6 +318,33 @@ class MvpFlowTests(TestCase):
         self.assertEqual([(row['user'].username, row['points']) for row in rows_a], [('player', 5), ('other', 2)])
         self.assertEqual([(row['user'].username, row['points']) for row in rows_b], [('player', 0)])
 
+    def test_leaderboard_tracks_position_changes_after_recalculation(self):
+        tournament = FriendTournament.objects.create(name='Position Changes Tournament')
+        TournamentMembership.objects.create(tournament=tournament, user=self.user)
+        TournamentMembership.objects.create(tournament=tournament, user=self.other_user)
+        Prediction.objects.create(tournament=tournament, user=self.user, match=self.future_match, predicted_home_score=2, predicted_away_score=1)
+        Prediction.objects.create(tournament=tournament, user=self.other_user, match=self.future_match, predicted_home_score=1, predicted_away_score=0)
+
+        self.future_match.status = Match.Status.FINISHED
+        self.future_match.home_score = 2
+        self.future_match.away_score = 1
+        self.future_match.save()
+        recalculate_predictions(tournament=tournament)
+
+        Prediction.objects.create(tournament=tournament, user=self.user, match=self.locked_match, predicted_home_score=0, predicted_away_score=1)
+        Prediction.objects.create(tournament=tournament, user=self.other_user, match=self.locked_match, predicted_home_score=3, predicted_away_score=0)
+        self.locked_match.status = Match.Status.FINISHED
+        self.locked_match.home_score = 3
+        self.locked_match.away_score = 0
+        self.locked_match.save()
+        recalculate_predictions(tournament=tournament)
+
+        rows = leaderboard_for_tournament(tournament)
+        self.assertEqual([(row['user'].username, row['points'], row['position_change']) for row in rows], [
+            ('other', 7, 1),
+            ('player', 5, -1),
+        ])
+
     def test_member_prediction_detail_for_regular_user_only_shows_scored_finished_matches(self):
         tournament = FriendTournament.objects.create(name='Visible Predictions Tournament')
         TournamentMembership.objects.create(tournament=tournament, user=self.user)

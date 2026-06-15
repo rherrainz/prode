@@ -1,5 +1,6 @@
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
 from apps.predictions.models import Prediction
 
@@ -51,13 +52,34 @@ def leaderboard_for_tournament(tournament):
     points_by_user = {row['user_id']: row['points'] or 0 for row in totals}
     rows = [
         {
+            'membership': membership,
             'user': membership.user,
             'points': points_by_user.get(membership.user_id, 0),
             'joined_at': membership.joined_at,
+            'previous_position': membership.previous_leaderboard_position,
         }
         for membership in memberships
     ]
     rows.sort(key=lambda row: (-row['points'], row['joined_at']))
     for index, row in enumerate(rows, start=1):
         row['position'] = index
+        previous_position = row['previous_position'] or index
+        row['position_change'] = previous_position - index
     return rows
+
+
+def update_leaderboard_positions(tournament):
+    now = timezone.now()
+    rows = leaderboard_for_tournament(tournament)
+    for row in rows:
+        membership = row['membership']
+        previous_position = membership.leaderboard_position or row['position']
+        membership.previous_leaderboard_position = previous_position
+        membership.leaderboard_position = row['position']
+        membership.leaderboard_position_updated_at = now
+        membership.save(update_fields=[
+            'previous_leaderboard_position',
+            'leaderboard_position',
+            'leaderboard_position_updated_at',
+        ])
+    return len(rows)

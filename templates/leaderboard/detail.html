@@ -1,23 +1,34 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1>Tabla de posiciones</h1>
-<p class="text-muted">{{ tournament.name }}</p>
-<div class="table-responsive">
-  <table class="table align-middle leaderboard-table">
-    <thead><tr><th>Posición</th><th>Participante</th><th class="text-end">Puntos</th></tr></thead>
-    <tbody>
-      {% for row in rows %}
-        <tr>
-          <td data-label="Posición"><span class="leaderboard-position">{{ row.position }}</span></td>
-          <td data-label="Participante">
-            <a class="link-strong" href="{% url 'tournaments:member_predictions' tournament.slug row.user.id %}">{{ row.user.username }}</a>
-          </td>
-          <td class="text-end" data-label="Puntos"><span class="leaderboard-points">{{ row.points }}</span></td>
-        </tr>
-      {% empty %}
-        <tr><td colspan="3">No hay participantes.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+<section class="leaderboard-page">
+  <h1>Tabla de posiciones</h1>
+  <p class="text-muted">{{ tournament.name }}</p>
+  <div class="table-responsive leaderboard-shell">
+    <table class="table align-middle leaderboard-table">
+      <thead><tr><th>Posición</th><th>Participante</th><th>Cambio</th><th class="text-end">Puntos</th></tr></thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td data-label="Posición"><span class="leaderboard-position">{{ row.position }}</span></td>
+            <td data-label="Participante">
+              <a class="link-strong" href="{% url 'tournaments:member_predictions' tournament.slug row.user.id %}">{{ row.user.username }}</a>
+            </td>
+            <td data-label="Cambio">
+              {% if row.position_change > 0 %}
+                <span class="leaderboard-change leaderboard-change--up"><i aria-hidden="true" class="bi bi-arrow-up-short"></i>{{ row.position_change }}</span>
+              {% elif row.position_change < 0 %}
+                <span class="leaderboard-change leaderboard-change--down"><i aria-hidden="true" class="bi bi-arrow-down-short"></i>{{ row.position_change|stringformat:"+d"|slice:"1:" }}</span>
+              {% else %}
+                <span class="leaderboard-change leaderboard-change--same"><i aria-hidden="true" class="bi bi-dash"></i></span>
+              {% endif %}
+            </td>
+            <td class="text-end" data-label="Puntos"><span class="leaderboard-points">{{ row.points }}</span></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4">No hay participantes.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
 {% endblock %}

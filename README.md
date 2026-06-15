@@ -60,13 +60,14 @@ La app queda disponible en `http://127.0.0.1:8000/`.
 5. Opcional: configurar tu zona horaria desde `/accounts/timezone/`.
 6. Abrir el torneo, revisar el fixture y guardar pronósticos antes del inicio del partido.
 7. Cargar resultados desde Django Admin en `Match` y marcar el partido como `finished`.
-8. Ejecutar:
+   Al editar resultado o estado desde el admin, los pronósticos del partido se recalculan automáticamente.
+8. Si se necesita recalcular manualmente, ejecutar:
 
 ```powershell
 python manage.py recalculate_points
 ```
 
-9. Revisar la tabla de posiciones del torneo.
+9. Revisar la tabla de posiciones del torneo. La tabla muestra puntos totales y cambio de posición desde la última actualización de resultados.
 
 ## Comandos
 
@@ -77,9 +78,12 @@ python manage.py recalculate_points --tournament slug-del-torneo
 python manage.py recalculate_points --match 1
 python manage.py sync_api_football_stub
 python manage.py sync_thesportsdb_results --dry-run
+python manage.py sync_results_and_recalculate --days-back 1 --days-forward 1
 ```
 
 `seed_worldcup_structure` carga los 12 grupos sorteados, 48 equipos y los 104 partidos desde `apps/matches/data/world_cup_2026_schedule.csv`. Los horarios se guardan en UTC y cada partido conserva `venue_timezone` para mostrar horario de sede y horario del usuario.
+
+`sync_results_and_recalculate` sincroniza resultados desde TheSportsDB y recalcula puntos. Cuando cambian puntajes, también actualiza el snapshot de posiciones para mostrar subidas y bajadas en el leaderboard.
 
 ## Verificación local
 
@@ -150,12 +154,35 @@ SECRET_KEY=...
 DEBUG=False
 ALLOWED_HOSTS=tu-dominio.up.railway.app
 CSRF_TRUSTED_ORIGINS=https://tu-dominio.up.railway.app
-DATABASE_PATH=/data/db.sqlite3
+DATABASE_ENGINE=postgres
+DATABASE_URL=${{Postgres.DATABASE_URL}}
 API_FOOTBALL_KEY=
 API_FOOTBALL_BASE_URL=https://v3.football.api-sports.io
+THESPORTSDB_API_KEY=123
+THESPORTSDB_BASE_URL=https://www.thesportsdb.com/api/v1/json
+THESPORTSDB_WORLD_CUP_LEAGUE_ID=4429
+THESPORTSDB_WORLD_CUP_SEASON=2026
 ```
 
 Para persistir SQLite en Railway, montar un volumen y usar `DATABASE_PATH=/data/db.sqlite3`.
+
+### Servicios en Railway
+
+Usar dos servicios separados con el mismo repo:
+
+- `web`: servicio principal con dominio público. No debe tener `Cron Schedule` ni `RUN_MODE=cron`.
+- `results-cron`: servicio sin dominio público, con `RUN_MODE=cron` y `Cron Schedule` configurado.
+
+El `startCommand` de `railway.json` detecta `RUN_MODE=cron`:
+
+- En `web`, ejecuta migraciones, `collectstatic`, intenta sincronizar resultados y luego levanta Gunicorn.
+- En `results-cron`, ejecuta solo `sync_results_and_recalculate`.
+
+Cron recomendado:
+
+```text
+0 */2 * * *
+```
 
 ### Base de datos en producción
 
@@ -186,13 +213,20 @@ TheSportsDB se puede usar como fuente gratuita para resultados finales. La app s
 ```powershell
 python manage.py sync_thesportsdb_results --date 2026-06-11 --days-back 0 --days-forward 0 --dry-run
 python manage.py sync_thesportsdb_results
+python manage.py sync_results_and_recalculate --date 2026-06-15 --days-back 1 --days-forward 1
 ```
+
+La sincronización consulta `eventsday.php` y usa `eventsseason.php` como fallback para partidos que TheSportsDB omite en la consulta diaria. También contempla partidos cuyo día UTC difiere del día ET, por ejemplo partidos de madrugada.
 
 Para Railway Cron cada 2 horas:
 
 ```bash
 python manage.py sync_results_and_recalculate --days-back 1 --days-forward 1
 ```
+
+## Leaderboard
+
+La tabla de posiciones está limitada a un ancho cómodo en desktop y muestra el cambio de posición desde la última actualización de resultados. El snapshot de posiciones se actualiza cuando `recalculate_predictions()` detecta cambios reales de puntos; si un cron corre sin resultados nuevos, no pisa el último movimiento visible.
 
 ## Futuro Google Login
 

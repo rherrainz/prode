@@ -414,6 +414,38 @@ a:hover {
   width: 3rem;
 }
 
+.leaderboard-page {
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.leaderboard-shell {
+  max-width: 100%;
+}
+
+.leaderboard-change {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  color: var(--color-muted);
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+.leaderboard-change i {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.leaderboard-change--up {
+  color: #17834a;
+}
+
+.leaderboard-change--down {
+  color: #b23b3b;
+}
+
 .leaderboard-points {
   color: #7a5720;
   font-weight: 850;
@@ -596,6 +628,10 @@ a:hover {
 
   .leaderboard-table {
     min-width: 0;
+  }
+
+  .leaderboard-page {
+    max-width: 100%;
   }
 
   .mobile-stack-table {

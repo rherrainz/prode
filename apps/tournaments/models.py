@@ -66,6 +66,9 @@ class TournamentMembership(models.Model):
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.PLAYER)
     joined_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
+    previous_leaderboard_position = models.PositiveSmallIntegerField(null=True, blank=True)
+    leaderboard_position = models.PositiveSmallIntegerField(null=True, blank=True)
+    leaderboard_position_updated_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ['joined_at']
