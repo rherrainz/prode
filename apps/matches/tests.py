@@ -108,12 +108,18 @@ class TheSportsDBSyncDateTests(TestCase):
                 }]
             return 'fake-endpoint', []
 
+        def fake_fetch_events_for_season():
+            return 'fake-season-endpoint', []
+
         original_fetch = thesportsdb._fetch_events_for_day
+        original_fetch_season = thesportsdb._fetch_events_for_season
         thesportsdb._fetch_events_for_day = fake_fetch_events_for_day
+        thesportsdb._fetch_events_for_season = fake_fetch_events_for_season
         try:
             result = thesportsdb.sync_results(days_back=0, days_forward=0, base_date=date(2026, 6, 15))
         finally:
             thesportsdb._fetch_events_for_day = original_fetch
+            thesportsdb._fetch_events_for_season = original_fetch_season
 
         match.refresh_from_db()
         self.assertEqual(requested_days, [date(2026, 6, 14), date(2026, 6, 15)])
@@ -121,6 +127,48 @@ class TheSportsDBSyncDateTests(TestCase):
         self.assertEqual(match.status, Match.Status.FINISHED)
         self.assertEqual(match.home_score, 1)
         self.assertEqual(match.away_score, 0)
+
+    def test_sync_uses_season_fallback_when_eventsday_omits_match(self):
+        netherlands = Team.objects.create(name='Netherlands', fifa_code='NED')
+        japan = Team.objects.create(name='Japan', fifa_code='JPN')
+        match = Match.objects.create(
+            match_number=10,
+            phase=Match.Phase.GROUP_STAGE,
+            home_team=netherlands,
+            away_team=japan,
+            kickoff_at=datetime(2026, 6, 14, 20, 0, tzinfo=datetime_timezone.utc),
+        )
+
+        def fake_fetch_events_for_day(day):
+            return 'fake-endpoint', []
+
+        def fake_fetch_events_for_season():
+            return 'fake-season-endpoint', [{
+                'idEvent': 'netherlands-japan',
+                'dateEvent': '2026-06-14',
+                'strHomeTeam': 'Netherlands',
+                'strAwayTeam': 'Japan',
+                'intHomeScore': '2',
+                'intAwayScore': '2',
+            }]
+
+        original_fetch = thesportsdb._fetch_events_for_day
+        original_fetch_season = thesportsdb._fetch_events_for_season
+        thesportsdb._fetch_events_for_day = fake_fetch_events_for_day
+        thesportsdb._fetch_events_for_season = fake_fetch_events_for_season
+        try:
+            result = thesportsdb.sync_results(days_back=0, days_forward=0, base_date=date(2026, 6, 14))
+        finally:
+            thesportsdb._fetch_events_for_day = original_fetch
+            thesportsdb._fetch_events_for_season = original_fetch_season
+
+        match.refresh_from_db()
+        self.assertEqual(result['request_count'], 2)
+        self.assertEqual(result['seen_count'], 1)
+        self.assertEqual(result['updated_count'], 1)
+        self.assertEqual(match.status, Match.Status.FINISHED)
+        self.assertEqual(match.home_score, 2)
+        self.assertEqual(match.away_score, 2)
 
 
 class MatchAdminRecalculationTests(TestCase):

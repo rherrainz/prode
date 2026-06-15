@@ -430,12 +430,18 @@ class MvpFlowTests(TestCase):
                 'intAwayScore': '1',
             }]
 
+        def fake_fetch_events_for_season():
+            return 'fake-season-endpoint', []
+
         original_fetch = thesportsdb._fetch_events_for_day
+        original_fetch_season = thesportsdb._fetch_events_for_season
         thesportsdb._fetch_events_for_day = fake_fetch_events_for_day
+        thesportsdb._fetch_events_for_season = fake_fetch_events_for_season
         try:
             result = thesportsdb.sync_results(days_back=0, days_forward=0)
         finally:
             thesportsdb._fetch_events_for_day = original_fetch
+            thesportsdb._fetch_events_for_season = original_fetch_season
 
         self.future_match.refresh_from_db()
         self.assertEqual(result['updated_count'], 1)
