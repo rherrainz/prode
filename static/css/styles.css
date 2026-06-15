@@ -322,6 +322,16 @@ a:hover {
   margin-bottom: 1.25rem;
 }
 
+.prediction-matchup {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+}
+
+.prediction-matchup__team {
+  min-width: 0;
+}
+
 .prediction-table select,
 .score-selects select {
   width: 4rem;
@@ -695,6 +705,49 @@ a:hover {
     display: inline;
     font-weight: 800;
     letter-spacing: .02em;
+  }
+
+  .prediction-match-cell {
+    align-items: flex-start;
+  }
+
+  .prediction-match-cell::before {
+    padding-top: .45rem;
+  }
+
+  .prediction-matchup {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: .5rem;
+    max-width: min(100%, 12rem);
+    text-align: right;
+  }
+
+  .prediction-matchup__team,
+  .prediction-matchup .team-label,
+  .prediction-matchup .team-label__full {
+    max-width: 100%;
+  }
+
+  .prediction-matchup .team-label {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: .25rem;
+    white-space: normal;
+  }
+
+  .prediction-matchup .team-label__full {
+    display: inline;
+    overflow-wrap: anywhere;
+    line-height: 1.15;
+  }
+
+  .prediction-matchup .team-label__short {
+    display: none;
+  }
+
+  .prediction-matchup .team-label .fi {
+    flex: 0 0 auto;
   }
 
   .card,

@@ -36,7 +36,13 @@
             {% for item in round.matches %}
               <tr>
                 <td data-label="#"><span class="match-status">#{{ item.match.match_number }}</span></td>
-                <td data-label="Partido">{% team_label item.match.home_team item.match.home_team_placeholder %} <span class="text-muted mx-1">vs</span> {% team_label item.match.away_team item.match.away_team_placeholder %}</td>
+                <td class="prediction-match-cell" data-label="Partido">
+                  <div class="prediction-matchup">
+                    <span class="prediction-matchup__team">{% team_label item.match.home_team item.match.home_team_placeholder %}</span>
+                    <span class="prediction-versus">vs</span>
+                    <span class="prediction-matchup__team">{% team_label item.match.away_team item.match.away_team_placeholder %}</span>
+                  </div>
+                </td>
                 <td data-label="Tu horario">{{ item.match.kickoff_at|match_datetime:viewer_timezone }}</td>
                 <td data-label="Pronóstico">
                   {% if item.locked %}
