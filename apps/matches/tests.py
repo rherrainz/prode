@@ -111,15 +111,21 @@ class TheSportsDBSyncDateTests(TestCase):
         def fake_fetch_events_for_season():
             return 'fake-season-endpoint', []
 
+        def fake_fetch_events_by_name(home_name, away_name):
+            return 'fake-search-endpoint', []
+
         original_fetch = thesportsdb._fetch_events_for_day
         original_fetch_season = thesportsdb._fetch_events_for_season
+        original_fetch_by_name = thesportsdb._fetch_events_by_name
         thesportsdb._fetch_events_for_day = fake_fetch_events_for_day
         thesportsdb._fetch_events_for_season = fake_fetch_events_for_season
+        thesportsdb._fetch_events_by_name = fake_fetch_events_by_name
         try:
             result = thesportsdb.sync_results(days_back=0, days_forward=0, base_date=date(2026, 6, 15))
         finally:
             thesportsdb._fetch_events_for_day = original_fetch
             thesportsdb._fetch_events_for_season = original_fetch_season
+            thesportsdb._fetch_events_by_name = original_fetch_by_name
 
         match.refresh_from_db()
         self.assertEqual(requested_days, [date(2026, 6, 14), date(2026, 6, 15)])
@@ -152,23 +158,81 @@ class TheSportsDBSyncDateTests(TestCase):
                 'intAwayScore': '2',
             }]
 
+        def fake_fetch_events_by_name(home_name, away_name):
+            return 'fake-search-endpoint', []
+
         original_fetch = thesportsdb._fetch_events_for_day
         original_fetch_season = thesportsdb._fetch_events_for_season
+        original_fetch_by_name = thesportsdb._fetch_events_by_name
         thesportsdb._fetch_events_for_day = fake_fetch_events_for_day
         thesportsdb._fetch_events_for_season = fake_fetch_events_for_season
+        thesportsdb._fetch_events_by_name = fake_fetch_events_by_name
         try:
             result = thesportsdb.sync_results(days_back=0, days_forward=0, base_date=date(2026, 6, 14))
         finally:
             thesportsdb._fetch_events_for_day = original_fetch
             thesportsdb._fetch_events_for_season = original_fetch_season
+            thesportsdb._fetch_events_by_name = original_fetch_by_name
 
         match.refresh_from_db()
-        self.assertEqual(result['request_count'], 2)
+        self.assertEqual(result['request_count'], 3)
         self.assertEqual(result['seen_count'], 1)
         self.assertEqual(result['updated_count'], 1)
         self.assertEqual(match.status, Match.Status.FINISHED)
         self.assertEqual(match.home_score, 2)
         self.assertEqual(match.away_score, 2)
+
+    def test_sync_uses_search_fallback_when_day_and_season_omit_match(self):
+        portugal = Team.objects.create(name='Portugal', fifa_code='POR')
+        congo = Team.objects.create(name='Congo DR', fifa_code='COD')
+        match = Match.objects.create(
+            match_number=21,
+            phase=Match.Phase.GROUP_STAGE,
+            home_team=portugal,
+            away_team=congo,
+            kickoff_at=datetime(2026, 6, 17, 17, 0, tzinfo=datetime_timezone.utc),
+        )
+        searched_names = []
+
+        def fake_fetch_events_for_day(day):
+            return 'fake-endpoint', []
+
+        def fake_fetch_events_for_season():
+            return 'fake-season-endpoint', []
+
+        def fake_fetch_events_by_name(home_name, away_name):
+            searched_names.append((home_name, away_name))
+            return 'fake-search-endpoint', [{
+                'idEvent': 'portugal-dr-congo',
+                'dateEvent': '2026-06-17',
+                'strHomeTeam': 'Portugal',
+                'strAwayTeam': 'DR Congo',
+                'intHomeScore': '1',
+                'intAwayScore': '1',
+            }]
+
+        original_fetch = thesportsdb._fetch_events_for_day
+        original_fetch_season = thesportsdb._fetch_events_for_season
+        original_fetch_by_name = thesportsdb._fetch_events_by_name
+        thesportsdb._fetch_events_for_day = fake_fetch_events_for_day
+        thesportsdb._fetch_events_for_season = fake_fetch_events_for_season
+        thesportsdb._fetch_events_by_name = fake_fetch_events_by_name
+        try:
+            result = thesportsdb.sync_results(days_back=0, days_forward=0, base_date=date(2026, 6, 17))
+        finally:
+            thesportsdb._fetch_events_for_day = original_fetch
+            thesportsdb._fetch_events_for_season = original_fetch_season
+            thesportsdb._fetch_events_by_name = original_fetch_by_name
+
+        match.refresh_from_db()
+        self.assertEqual(searched_names, [('Portugal', 'Congo DR')])
+        self.assertEqual(result['request_count'], 3)
+        self.assertEqual(result['seen_count'], 1)
+        self.assertEqual(result['updated_count'], 1)
+        self.assertEqual(match.external_id, 'thesportsdb:portugal-dr-congo')
+        self.assertEqual(match.status, Match.Status.FINISHED)
+        self.assertEqual(match.home_score, 1)
+        self.assertEqual(match.away_score, 1)
 
 
 class MatchAdminRecalculationTests(TestCase):

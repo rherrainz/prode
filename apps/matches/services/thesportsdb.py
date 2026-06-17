@@ -21,6 +21,17 @@ TEAM_ALIASES = {
     'Turkey': 'Türkiye',
 }
 
+PROVIDER_TEAM_ALIASES = {
+    'Bosnia and Herzegovina': 'Bosnia-Herzegovina',
+    'Cabo Verde': 'Cape Verde',
+    'Congo DR': 'DR Congo',
+    'Czechia': 'Czech Republic',
+    'IR Iran': 'Iran',
+    "Côte d'Ivoire": 'Ivory Coast',
+    'Korea Republic': 'South Korea',
+    'Türkiye': 'Turkey',
+}
+
 EVENT_DATE_TIMEZONE = ZoneInfo('America/New_York')
 
 
@@ -30,6 +41,10 @@ def _base_url():
 
 def _normalize_team_name(name):
     return TEAM_ALIASES.get(name, name)
+
+
+def _provider_team_name(name):
+    return PROVIDER_TEAM_ALIASES.get(name, name)
 
 
 def _fetch_events_for_day(day):
@@ -42,6 +57,16 @@ def _fetch_events_for_day(day):
     with urlopen(request, timeout=20) as response:
         payload = json.loads(response.read().decode('utf-8'))
     return endpoint, payload.get('events') or []
+
+
+def _fetch_events_by_name(home_name, away_name):
+    event_name = f'{_provider_team_name(home_name)}_vs_{_provider_team_name(away_name)}'.replace(' ', '_')
+    query = urlencode({'e': event_name})
+    endpoint = f'{_base_url()}/searchevents.php?{query}'
+    request = Request(endpoint, headers={'User-Agent': 'worldcup-prode/1.0'})
+    with urlopen(request, timeout=20) as response:
+        payload = json.loads(response.read().decode('utf-8'))
+    return endpoint, payload.get('event') or payload.get('events') or []
 
 
 def _fetch_events_for_season():
@@ -67,6 +92,14 @@ def _sync_days(base_date, days_back, days_forward):
         days.add(match.kickoff_at.astimezone(EVENT_DATE_TIMEZONE).date())
 
     return sorted(days)
+
+
+def _sync_window(days):
+    start_day = min(days)
+    end_day = max(days) + timedelta(days=1)
+    start_at = datetime.combine(start_day, time.min, tzinfo=datetime_timezone.utc)
+    end_at = datetime.combine(end_day, time.min, tzinfo=datetime_timezone.utc)
+    return start_at, end_at
 
 
 def _event_date(event):
@@ -119,6 +152,7 @@ def sync_results(days_back=1, days_forward=1, base_date=None, dry_run=False):
 
     days = _sync_days(base_date, days_back, days_forward)
     sync_day_set = set(days)
+    start_at, end_at = _sync_window(days)
 
     for day in days:
         endpoint, day_events = _fetch_events_for_day(day)
@@ -138,6 +172,22 @@ def sync_results(days_back=1, days_forward=1, base_date=None, dry_run=False):
         if key not in seen_event_keys:
             seen_event_keys.add(key)
             collected_events.append((_event_date(event), event))
+
+    expected_matches = (
+        Match.objects
+        .filter(kickoff_at__gte=start_at, kickoff_at__lt=end_at, home_team__isnull=False, away_team__isnull=False)
+        .select_related('home_team', 'away_team')
+    )
+    for expected_match in expected_matches:
+        endpoint, searched_events = _fetch_events_by_name(expected_match.home_team.name, expected_match.away_team.name)
+        request_count += 1
+        for event in searched_events:
+            if _event_date(event) not in sync_day_set:
+                continue
+            key = _event_key(event)
+            if key not in seen_event_keys:
+                seen_event_keys.add(key)
+                collected_events.append((_event_date(event), event))
 
     seen_count = len(collected_events)
     for day, event in collected_events:
@@ -166,7 +216,7 @@ def sync_results(days_back=1, days_forward=1, base_date=None, dry_run=False):
         message = f'{message} ' + ' | '.join(messages[:5])
     log = ApiSyncLog.objects.create(
         provider='thesportsdb',
-        endpoint='eventsday/eventsseason',
+        endpoint='eventsday/eventsseason/searchevents',
         status=status,
         request_count=request_count,
         response_code=200,
