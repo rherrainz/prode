@@ -786,6 +786,27 @@ a:hover {
     flex: 0 0 auto;
   }
 
+  .prediction-form {
+    padding-bottom: 5.75rem;
+  }
+
+  .prediction-savebar {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 20;
+    justify-content: center;
+    padding: .75rem 1rem calc(.75rem + env(safe-area-inset-bottom));
+    background: rgba(246, 248, 251, .96);
+    border-top: 1px solid var(--color-border);
+    box-shadow: 0 -10px 24px rgba(16, 42, 67, .12);
+  }
+
+  .prediction-savebar .btn {
+    width: min(100%, 24rem);
+  }
+
   .card,
   .panel,
   .stacked-form {
