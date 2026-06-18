@@ -14,7 +14,11 @@
         <span><i aria-hidden="true" class="bi bi-globe-americas"></i> Sede: {{ match.kickoff_at|match_datetime:match.venue_timezone }}</span>
       </div>
       <div class="d-flex justify-content-between align-items-center gap-2 mt-3">
-        <span class="match-score">{{ match.score_label }}</span>
+        {% if match.status == 'finished' and match.has_result %}
+          <a class="match-score link-strong" href="{% url 'tournaments:match_predictions' tournament.slug match.id %}">{{ match.score_label }}</a>
+        {% else %}
+          <span class="match-score">{{ match.score_label }}</span>
+        {% endif %}
         <a class="btn btn-outline-primary btn-sm" href="{% url 'tournaments:match_detail' tournament.slug match.id %}"><i aria-hidden="true" class="bi bi-pencil-square"></i> Pronóstico</a>
       </div>
     </article>
@@ -49,7 +53,13 @@
           <td>{{ match.kickoff_at|match_datetime:viewer_timezone }}</td>
           <td>{{ match.get_phase_display }}</td>
           <td>{% team_label match.home_team match.home_team_placeholder %} <span class="text-muted mx-1">vs</span> {% team_label match.away_team match.away_team_placeholder %}</td>
-          <td><span class="match-score">{{ match.score_label }}</span></td>
+          <td>
+            {% if match.status == 'finished' and match.has_result %}
+              <a class="match-score link-strong" href="{% url 'tournaments:match_predictions' tournament.slug match.id %}">{{ match.score_label }}</a>
+            {% else %}
+              <span class="match-score">{{ match.score_label }}</span>
+            {% endif %}
+          </td>
           <td><a class="btn btn-outline-primary btn-sm" href="{% url 'tournaments:match_detail' tournament.slug match.id %}"><i aria-hidden="true" class="bi bi-pencil-square"></i> Pronóstico</a></td>
         </tr>
       {% empty %}

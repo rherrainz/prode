@@ -314,6 +314,23 @@ class MvpFlowTests(TestCase):
             'match_id': self.locked_match.id,
         }))
 
+    def test_fixture_links_finished_results_to_group_predictions(self):
+        tournament = FriendTournament.objects.create(name='Fixture Result Link Tournament')
+        TournamentMembership.objects.create(tournament=tournament, user=self.user)
+        self.locked_match.status = Match.Status.FINISHED
+        self.locked_match.home_score = 1
+        self.locked_match.away_score = 0
+        self.locked_match.save()
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('tournaments:fixture', kwargs={'slug': tournament.slug}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse('tournaments:match_predictions', kwargs={
+            'slug': tournament.slug,
+            'match_id': self.locked_match.id,
+        }))
+
     def test_points_and_leaderboard_are_per_tournament(self):
         tournament_a = FriendTournament.objects.create(name='Tournament A')
         tournament_b = FriendTournament.objects.create(name='Tournament B')
