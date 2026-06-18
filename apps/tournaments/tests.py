@@ -289,6 +289,31 @@ class MvpFlowTests(TestCase):
         self.assertEqual(prediction.score_label, '2 - 1')
         self.assertFalse(Prediction.objects.filter(tournament=tournament, user=self.user, match=self.locked_match).exists())
 
+    def test_predictions_list_links_finished_results_to_group_predictions(self):
+        tournament = FriendTournament.objects.create(name='Result Link Tournament')
+        TournamentMembership.objects.create(tournament=tournament, user=self.user)
+        Prediction.objects.create(
+            tournament=tournament,
+            user=self.user,
+            match=self.locked_match,
+            predicted_home_score=1,
+            predicted_away_score=0,
+        )
+        self.locked_match.status = Match.Status.FINISHED
+        self.locked_match.home_score = 1
+        self.locked_match.away_score = 0
+        self.locked_match.save()
+        recalculate_predictions(tournament=tournament)
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('tournaments:predictions', kwargs={'slug': tournament.slug}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse('tournaments:match_predictions', kwargs={
+            'slug': tournament.slug,
+            'match_id': self.locked_match.id,
+        }))
+
     def test_points_and_leaderboard_are_per_tournament(self):
         tournament_a = FriendTournament.objects.create(name='Tournament A')
         tournament_b = FriendTournament.objects.create(name='Tournament B')
@@ -381,6 +406,10 @@ class MvpFlowTests(TestCase):
         self.assertContains(response, 'Pronósticos de other')
         self.assertContains(response, '1 - 0')
         self.assertContains(response, '5')
+        self.assertContains(response, reverse('tournaments:match_predictions', kwargs={
+            'slug': tournament.slug,
+            'match_id': self.locked_match.id,
+        }))
         self.assertNotContains(response, '4 - 4')
 
     def test_match_predictions_show_group_predictions_for_finished_match(self):

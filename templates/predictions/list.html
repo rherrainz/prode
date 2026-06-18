@@ -68,7 +68,13 @@
                     </div>
                   {% endif %}
                 </td>
-                <td data-label="Resultado"><span class="match-score">{{ item.match.score_label }}</span></td>
+                <td data-label="Resultado">
+                  {% if item.match.status == 'finished' and item.match.has_result %}
+                    <a class="match-score link-strong" href="{% url 'tournaments:match_predictions' tournament.slug item.match.id %}">{{ item.match.score_label }}</a>
+                  {% else %}
+                    <span class="match-score">{{ item.match.score_label }}</span>
+                  {% endif %}
+                </td>
                 <td data-label="Puntos"><span class="leaderboard-points">{{ item.prediction.points|default:0 }}</span></td>
               </tr>
             {% endfor %}
