@@ -231,6 +231,42 @@ def match_detail(request, slug, match_id):
 
 
 @login_required
+def match_predictions(request, slug, match_id):
+    tournament = _member_tournament_or_forbidden(request, slug)
+    if tournament is None:
+        return HttpResponseForbidden('No tenés permiso para ver este torneo.')
+    match = get_object_or_404(Match.objects.select_related('home_team', 'away_team', 'group'), pk=match_id)
+    if match.status != Match.Status.FINISHED or not match.has_result:
+        return HttpResponseForbidden('Los pronósticos del grupo se muestran cuando el partido ya tiene resultado.')
+
+    memberships = (
+        TournamentMembership.objects
+        .filter(tournament=tournament, is_active=True)
+        .select_related('user')
+        .order_by('user__username')
+    )
+    predictions = (
+        Prediction.objects
+        .filter(tournament=tournament, match=match)
+        .select_related('user')
+    )
+    predictions_by_user = {prediction.user_id: prediction for prediction in predictions}
+    rows = [
+        {
+            'user': membership.user,
+            'prediction': predictions_by_user.get(membership.user_id),
+        }
+        for membership in memberships
+    ]
+
+    return render(request, 'matches/predictions.html', {
+        'tournament': tournament,
+        'match': match,
+        'rows': rows,
+    })
+
+
+@login_required
 def my_predictions(request, slug):
     tournament = _member_tournament_or_forbidden(request, slug)
     if tournament is None:

@@ -383,6 +383,63 @@ class MvpFlowTests(TestCase):
         self.assertContains(response, '5')
         self.assertNotContains(response, '4 - 4')
 
+    def test_match_predictions_show_group_predictions_for_finished_match(self):
+        tournament = FriendTournament.objects.create(name='Match Predictions Tournament')
+        third_user = User.objects.create_user('third', 'third@example.com', 'pass12345')
+        TournamentMembership.objects.create(tournament=tournament, user=self.user)
+        TournamentMembership.objects.create(tournament=tournament, user=self.other_user)
+        TournamentMembership.objects.create(tournament=tournament, user=third_user)
+        exact = Prediction.objects.create(
+            tournament=tournament,
+            user=self.user,
+            match=self.locked_match,
+            predicted_home_score=1,
+            predicted_away_score=0,
+        )
+        outcome = Prediction.objects.create(
+            tournament=tournament,
+            user=self.other_user,
+            match=self.locked_match,
+            predicted_home_score=2,
+            predicted_away_score=0,
+        )
+        self.locked_match.status = Match.Status.FINISHED
+        self.locked_match.home_score = 1
+        self.locked_match.away_score = 0
+        self.locked_match.save()
+        recalculate_predictions(tournament=tournament)
+        exact.refresh_from_db()
+        outcome.refresh_from_db()
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('tournaments:match_predictions', kwargs={
+            'slug': tournament.slug,
+            'match_id': self.locked_match.id,
+        }))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Pronósticos del grupo')
+        self.assertContains(response, 'player')
+        self.assertContains(response, 'other')
+        self.assertContains(response, 'third')
+        self.assertContains(response, '1 - 0')
+        self.assertContains(response, '2 - 0')
+        self.assertContains(response, 'Sin pronóstico')
+        self.assertContains(response, '5')
+        self.assertContains(response, '2')
+
+    def test_match_predictions_require_finished_result(self):
+        tournament = FriendTournament.objects.create(name='Hidden Match Predictions Tournament')
+        TournamentMembership.objects.create(tournament=tournament, user=self.user)
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('tournaments:match_predictions', kwargs={
+            'slug': tournament.slug,
+            'match_id': self.future_match.id,
+        }))
+
+        self.assertEqual(response.status_code, 403)
+
     def test_member_prediction_detail_for_staff_shows_future_matches(self):
         staff = User.objects.create_superuser('staff_viewer', 'staff_viewer@example.com', 'pass12345')
         tournament = FriendTournament.objects.create(name='Staff Visible Predictions Tournament')

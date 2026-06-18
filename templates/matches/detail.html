@@ -10,6 +10,9 @@
   <p class="text-muted">Tu horario: {{ match.kickoff_at|match_datetime:viewer_timezone }}</p>
   {% if match.status == 'finished' %}
     <p><strong>Partido finalizado:</strong> <span class="match-score">{{ match.score_label }}</span></p>
+    <a class="btn btn-outline-primary btn-sm" href="{% url 'tournaments:match_predictions' tournament.slug match.id %}">
+      <i aria-hidden="true" class="bi bi-people"></i> Ver pronósticos del grupo
+    </a>
   {% endif %}
 </section>
 <div class="narrow">

@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load match_display match_time %}
+{% block content %}
+{% user_timezone as viewer_timezone %}
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+  <div>
+    <a href="{% url 'tournaments:match_detail' tournament.slug match.id %}" class="link-secondary">Partido</a>
+    <h1 class="mt-2 match-title">{% team_label match.home_team match.home_team_placeholder %} <span class="text-muted">vs</span> {% team_label match.away_team match.away_team_placeholder %}</h1>
+    <p class="text-muted mb-0">{{ tournament.name }} · {{ match.kickoff_at|match_datetime:viewer_timezone }}</p>
+  </div>
+  <a class="btn btn-outline-primary" href="{% url 'tournaments:leaderboard' tournament.slug %}">
+    <i aria-hidden="true" class="bi bi-bar-chart"></i> Tabla
+  </a>
+</div>
+
+<section class="match-card match-result-summary mb-4">
+  <span class="match-status"><i aria-hidden="true" class="bi bi-check2-circle"></i> Partido finalizado</span>
+  <p class="mb-0 mt-3"><strong>Resultado:</strong> <span class="match-score">{{ match.score_label }}</span></p>
+</section>
+
+<section class="panel match-predictions-page">
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">Pronósticos del grupo</h2>
+    <span class="badge-accent">{{ rows|length }} participantes</span>
+  </div>
+  <div class="table-responsive mobile-stack-table shadow-none">
+    <table class="table align-middle match-predictions-table">
+      <thead>
+        <tr>
+          <th>Participante</th>
+          <th>Pronóstico</th>
+          <th class="text-end">Puntos</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td data-label="Participante">
+              <a class="link-strong" href="{% url 'tournaments:member_predictions' tournament.slug row.user.id %}">{{ row.user.username }}</a>
+            </td>
+            <td data-label="Pronóstico">
+              {% if row.prediction %}
+                <span class="match-score">{{ row.prediction.score_label }}</span>
+              {% else %}
+                <span class="text-muted">Sin pronóstico</span>
+              {% endif %}
+            </td>
+            <td class="text-end" data-label="Puntos">
+              {% if row.prediction %}
+                <span class="leaderboard-points">{{ row.prediction.points }}</span>
+              {% else %}
+                <span class="text-muted">-</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="3">No hay participantes activos.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

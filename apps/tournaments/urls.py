@@ -17,5 +17,6 @@ urlpatterns = [
     path('<slug:slug>/predictions/', views.my_predictions, name='predictions'),
     path('<slug:slug>/members/', views.members, name='members'),
     path('<slug:slug>/members/<int:user_id>/predictions/', views.member_predictions, name='member_predictions'),
+    path('<slug:slug>/matches/<int:match_id>/predictions/', views.match_predictions, name='match_predictions'),
     path('<slug:slug>/matches/<int:match_id>/', views.match_detail, name='match_detail'),
 ]
