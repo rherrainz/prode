@@ -216,6 +216,17 @@ class Command(BaseCommand):
             home_team = Team.objects.filter(name=home_name).first() if home_name != 'TBD' else None
             away_team = Team.objects.filter(name=away_name).first() if away_name != 'TBD' else None
             venue_timezone = VENUE_TIMEZONES_BY_CITY[row['City']]
+            existing_match = Match.objects.filter(match_number=match_number).first()
+            if existing_match and home_team is None and existing_match.home_team_id:
+                home_team = existing_match.home_team
+            if existing_match and away_team is None and existing_match.away_team_id:
+                away_team = existing_match.away_team
+            home_placeholder = '' if home_team else f'{round_name} equipo local'
+            away_placeholder = '' if away_team else f'{round_name} equipo visitante'
+            if existing_match and home_team is None and existing_match.home_team_placeholder:
+                home_placeholder = existing_match.home_team_placeholder
+            if existing_match and away_team is None and existing_match.away_team_placeholder:
+                away_placeholder = existing_match.away_team_placeholder
             Match.objects.update_or_create(
                 match_number=match_number,
                 defaults={
@@ -223,8 +234,8 @@ class Command(BaseCommand):
                     'group': group,
                     'home_team': home_team,
                     'away_team': away_team,
-                    'home_team_placeholder': '' if home_team else f'{round_name} equipo local',
-                    'away_team_placeholder': '' if away_team else f'{round_name} equipo visitante',
+                    'home_team_placeholder': home_placeholder,
+                    'away_team_placeholder': away_placeholder,
                     'kickoff_at': kickoff_from_schedule(row),
                     'venue': row['Venue'],
                     'venue_timezone': venue_timezone,

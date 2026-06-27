@@ -2,7 +2,6 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
-from django.core.management import call_command
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -147,11 +146,15 @@ def staff_update_fixture(request):
     if request.method != 'POST':
         return redirect('tournaments:staff_admin')
     try:
-        call_command('seed_worldcup_structure')
+        result = sync_fixture(days_back=1, days_forward=14)
     except Exception as exc:
         messages.error(request, f'No se pudo actualizar el fixture: {exc}')
     else:
-        messages.success(request, 'Fixture actualizado correctamente: 12 grupos, 48 equipos y 104 partidos.')
+        messages.success(
+            request,
+            f"Fixture FIFA actualizado: {result['fixture_updated_count']} cruces actualizados, "
+            f"{result['seen_count']} eventos vistos.",
+        )
     return redirect('tournaments:staff_admin')
 
 

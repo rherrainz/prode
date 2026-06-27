@@ -59,8 +59,10 @@ La app queda disponible en `http://127.0.0.1:8000/`.
 4. Ir a `/tournaments/join/` e ingresar el código de invitación.
 5. Opcional: configurar tu zona horaria desde `/accounts/timezone/`.
 6. Abrir el torneo, revisar el fixture y guardar pronósticos antes del inicio del partido.
-7. Cargar resultados desde Django Admin en `Match` y marcar el partido como `finished`.
-   Al editar resultado o estado desde el admin, los pronósticos del partido se recalculan automáticamente.
+7. Actualizar fixture y resultados desde `/tournaments/admin/`.
+   `Actualizar fixture` toma cruces confirmados desde FIFA y conserva lo ya cargado en la base.
+   `Traer resultados API` usa TheSportsDB como fuente principal y FIFA como fallback para resultados, ganadores y penales.
+   Al editar resultado o estado desde Django Admin en `Match`, los pronósticos del partido se recalculan automáticamente.
 8. Si se necesita recalcular manualmente, ejecutar:
 
 ```powershell
@@ -81,9 +83,9 @@ python manage.py sync_thesportsdb_results --dry-run
 python manage.py sync_results_and_recalculate --days-back 1 --days-forward 1
 ```
 
-`seed_worldcup_structure` carga los 12 grupos sorteados, 48 equipos y los 104 partidos desde `apps/matches/data/world_cup_2026_schedule.csv`. Los horarios se guardan en UTC y cada partido conserva `venue_timezone` para mostrar horario de sede y horario del usuario.
+`seed_worldcup_structure` carga los 12 grupos sorteados, 48 equipos y los 104 partidos desde `apps/matches/data/world_cup_2026_schedule.csv`. Es un comando de bootstrap inicial/desarrollo: en producción, el fixture actualizado se toma desde FIFA. Si se ejecuta luego de tener cruces confirmados, conserva equipos ya cargados cuando el CSV todavía dice `TBD`.
 
-`sync_results_and_recalculate` sincroniza resultados desde TheSportsDB y recalcula puntos. Cuando cambian puntajes, también actualiza el snapshot de posiciones para mostrar subidas y bajadas en el leaderboard.
+`sync_results_and_recalculate` primero actualiza el fixture confirmado desde FIFA, luego sincroniza resultados desde TheSportsDB con fallback FIFA y recalcula puntos. Cuando cambian puntajes, también actualiza el snapshot de posiciones para mostrar subidas y bajadas en el leaderboard.
 
 ## Verificación local
 
@@ -115,7 +117,13 @@ El conteo esperado después del seed es:
 
 ## Actualizar fixture en servidor
 
-Cuando cambie el fixture versionado o se corrijan horarios, ejecutar en Railway/servidor:
+Para actualizar cruces confirmados, horarios y sedes desde FIFA, usar el panel staff en `/tournaments/admin/` con `Actualizar fixture` o ejecutar:
+
+```bash
+python manage.py sync_results_and_recalculate --days-back 1 --days-forward 1 --fixture-days-forward 14
+```
+
+El CSV queda reservado para bootstrap inicial o recuperación local. Si se necesita reconstruir estructura base:
 
 ```bash
 python manage.py migrate
@@ -128,13 +136,7 @@ Para verificar el conteo:
 python manage.py shell -c "from apps.teams.models import WorldCupGroup, Team; from apps.matches.models import Match; print(WorldCupGroup.objects.count(), Team.objects.count(), Match.objects.count())"
 ```
 
-El resultado esperado es:
-
-```text
-12 48 104
-```
-
-Si ya había resultados cargados o sincronizados, recalcular puntos después:
+El resultado esperado es `12 48 104`. Si se cargaron resultados manuales o se corrigieron puntajes, recalcular puntos después:
 
 ```bash
 python manage.py recalculate_points
@@ -142,8 +144,8 @@ python manage.py recalculate_points
 
 También se puede hacer desde `/tournaments/admin/` con un usuario staff usando:
 
-- `Actualizar fixture`
-- `Traer resultados API`
+- `Actualizar fixture`: consulta FIFA y actualiza cruces confirmados sin volver a `TBD`.
+- `Traer resultados API`: actualiza fixture, trae resultados desde TheSportsDB con fallback FIFA y recalcula puntos.
 
 ## Railway
 
@@ -162,9 +164,16 @@ THESPORTSDB_API_KEY=123
 THESPORTSDB_BASE_URL=https://www.thesportsdb.com/api/v1/json
 THESPORTSDB_WORLD_CUP_LEAGUE_ID=4429
 THESPORTSDB_WORLD_CUP_SEASON=2026
+FIFA_API_BASE_URL=https://api.fifa.com/api/v3
+FIFA_API_LANGUAGE=en
+FIFA_API_MATCH_COUNT=200
+FIFA_WORLD_CUP_COMPETITION_ID=17
+FIFA_WORLD_CUP_SEASON_ID=285023
 ```
 
 Para persistir SQLite en Railway, montar un volumen y usar `DATABASE_PATH=/data/db.sqlite3`.
+
+Las variables `FIFA_*` tienen defaults en `settings.py` y no requieren API key. Se pueden omitir en Railway salvo que se quiera cambiar el endpoint o los IDs sin modificar código.
 
 ### Servicios en Railway
 

@@ -122,18 +122,19 @@ class MvpFlowTests(TestCase):
         self.client.force_login(staff)
         calls = []
 
-        def fake_call_command(command_name):
-            calls.append(command_name)
+        def fake_sync_fixture(days_back, days_forward):
+            calls.append(('fixture', days_back, days_forward))
+            return {'fixture_updated_count': 4, 'seen_count': 18}
 
-        original_call_command = views.call_command
-        views.call_command = fake_call_command
+        original_sync_fixture = views.sync_fixture
+        views.sync_fixture = fake_sync_fixture
         try:
             response = self.client.post(reverse('tournaments:staff_update_fixture'))
         finally:
-            views.call_command = original_call_command
+            views.sync_fixture = original_sync_fixture
 
         self.assertRedirects(response, reverse('tournaments:staff_admin'))
-        self.assertEqual(calls, ['seed_worldcup_structure'])
+        self.assertEqual(calls, [('fixture', 1, 14)])
 
     def test_staff_can_trigger_api_result_sync_from_panel(self):
         staff = User.objects.create_superuser('sync_staff', 'sync_staff@example.com', 'pass12345')
@@ -553,6 +554,27 @@ class MvpFlowTests(TestCase):
         self.assertEqual(match.venue_timezone, 'America/Vancouver')
         self.assertEqual(argentina_time.strftime('%Y-%m-%d %H:%M'), '2026-06-14 01:00')
         self.assertEqual(venue_time.strftime('%Y-%m-%d %H:%M'), '2026-06-13 21:00')
+
+    def test_seed_preserves_confirmed_knockout_teams(self):
+        Match.objects.all().delete()
+        Team.objects.all().delete()
+        SeedWorldCupCommand().handle()
+        south_africa = Team.objects.get(name='South Africa')
+        canada = Team.objects.get(name='Canada')
+        match = Match.objects.get(match_number=73)
+        match.home_team = south_africa
+        match.away_team = canada
+        match.home_team_placeholder = ''
+        match.away_team_placeholder = ''
+        match.save(update_fields=['home_team', 'away_team', 'home_team_placeholder', 'away_team_placeholder', 'updated_at'])
+
+        SeedWorldCupCommand().handle()
+
+        match.refresh_from_db()
+        self.assertEqual(match.home_team, south_africa)
+        self.assertEqual(match.away_team, canada)
+        self.assertEqual(match.home_team_placeholder, '')
+        self.assertEqual(match.away_team_placeholder, '')
 
     def test_thesportsdb_sync_updates_finished_result(self):
         self.future_match.external_id = 'thesportsdb:fixture-1'
