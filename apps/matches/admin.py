@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from apps.predictions.services import recalculate_predictions
+from apps.matches.services.knockout import advance_knockout_match
 
 from .models import ApiSyncLog, Match
 
@@ -9,9 +10,11 @@ from .models import ApiSyncLog, Match
 def mark_finished(modeladmin, request, queryset):
     queryset.update(status=Match.Status.FINISHED)
     total = 0
+    fixture_total = 0
     for match in queryset:
         total += recalculate_predictions(match=match)
-    modeladmin.message_user(request, f'Se marcaron los partidos como finalizados y se recalcularon {total} pronósticos.')
+        fixture_total += advance_knockout_match(match)
+    modeladmin.message_user(request, f'Se marcaron los partidos como finalizados, se recalcularon {total} pronósticos y se actualizaron {fixture_total} cruces.')
 
 
 @admin.action(description='Recalcular pronósticos de partidos seleccionados')
@@ -38,8 +41,11 @@ class MatchAdmin(admin.ModelAdmin):
         result_fields = {'status', 'home_score', 'away_score', 'winner'}
         if change and result_fields.intersection(form.changed_data):
             total = recalculate_predictions(match=obj)
+            fixture_total = advance_knockout_match(obj)
             if total:
                 self.message_user(request, f'Se recalcularon {total} pronósticos para este partido.')
+            if fixture_total:
+                self.message_user(request, f'Se actualizaron {fixture_total} cruces del fixture.')
 
 
 @admin.register(ApiSyncLog)

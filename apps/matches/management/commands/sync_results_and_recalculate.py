@@ -29,6 +29,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(
             f"TheSportsDB sync: {result['request_count']} requests, "
-            f"{result['seen_count']} eventos, {result['updated_count']} actualizaciones. "
+            f"{result['seen_count']} eventos, {result['updated_count']} resultados, "
+            f"{result.get('fixture_updated_count', 0)} cruces actualizados. "
             f"Pronósticos recalculados: {recalculated_count}."
         ))

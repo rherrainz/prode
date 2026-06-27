@@ -234,6 +234,106 @@ class TheSportsDBSyncDateTests(TestCase):
         self.assertEqual(match.home_score, 1)
         self.assertEqual(match.away_score, 1)
 
+    def test_sync_populates_knockout_match_and_advances_penalty_winner(self):
+        south_africa = Team.objects.create(name='South Africa', fifa_code='RSA')
+        canada = Team.objects.create(name='Canada', fifa_code='CAN')
+        round_of_32 = Match.objects.create(
+            match_number=73,
+            phase=Match.Phase.ROUND_OF_32,
+            kickoff_at=datetime(2026, 6, 28, 19, 0, tzinfo=datetime_timezone.utc),
+            home_team_placeholder='Round of 32 equipo local',
+            away_team_placeholder='Round of 32 equipo visitante',
+        )
+        round_of_16 = Match.objects.create(
+            match_number=89,
+            phase=Match.Phase.ROUND_OF_16,
+            kickoff_at=datetime(2026, 7, 4, 17, 0, tzinfo=datetime_timezone.utc),
+            home_team_placeholder='Round of 16 equipo local',
+            away_team_placeholder='Round of 16 equipo visitante',
+        )
+
+        def fake_fetch_events_for_day(day):
+            if day == date(2026, 6, 28):
+                return 'fake-endpoint', [{
+                    'idEvent': 'round-32-73',
+                    'dateEvent': '2026-06-28',
+                    'strTimestamp': '2026-06-28T19:00:00+00:00',
+                    'strHomeTeam': 'South Africa',
+                    'strAwayTeam': 'Canada',
+                    'intHomeScore': '1',
+                    'intAwayScore': '1',
+                    'intHomePenaltyScore': '5',
+                    'intAwayPenaltyScore': '4',
+                }]
+            return 'fake-endpoint', []
+
+        def fake_fetch_events_for_season():
+            return 'fake-season-endpoint', []
+
+        def fake_fetch_events_by_name(home_name, away_name):
+            return 'fake-search-endpoint', []
+
+        original_fetch = thesportsdb._fetch_events_for_day
+        original_fetch_season = thesportsdb._fetch_events_for_season
+        original_fetch_by_name = thesportsdb._fetch_events_by_name
+        thesportsdb._fetch_events_for_day = fake_fetch_events_for_day
+        thesportsdb._fetch_events_for_season = fake_fetch_events_for_season
+        thesportsdb._fetch_events_by_name = fake_fetch_events_by_name
+        try:
+            result = thesportsdb.sync_results(days_back=0, days_forward=0, base_date=date(2026, 6, 28))
+        finally:
+            thesportsdb._fetch_events_for_day = original_fetch
+            thesportsdb._fetch_events_for_season = original_fetch_season
+            thesportsdb._fetch_events_by_name = original_fetch_by_name
+
+        round_of_32.refresh_from_db()
+        round_of_16.refresh_from_db()
+        self.assertEqual(result['updated_count'], 1)
+        self.assertEqual(result['fixture_updated_count'], 1)
+        self.assertEqual(round_of_32.external_id, 'thesportsdb:round-32-73')
+        self.assertEqual(round_of_32.home_team, south_africa)
+        self.assertEqual(round_of_32.away_team, canada)
+        self.assertEqual(round_of_32.home_score, 1)
+        self.assertEqual(round_of_32.away_score, 1)
+        self.assertEqual(round_of_32.winner, south_africa)
+        self.assertEqual(round_of_16.home_team, south_africa)
+        self.assertEqual(round_of_16.home_team_placeholder, '')
+
+    def test_semifinal_advancement_populates_final_and_third_place(self):
+        argentina = Team.objects.create(name='Argentina', fifa_code='ARG')
+        brazil = Team.objects.create(name='Brazil', fifa_code='BRA')
+        semifinal = Match.objects.create(
+            match_number=101,
+            phase=Match.Phase.SEMI_FINAL,
+            home_team=argentina,
+            away_team=brazil,
+            kickoff_at=datetime(2026, 7, 14, 19, 0, tzinfo=datetime_timezone.utc),
+            status=Match.Status.FINISHED,
+            home_score=2,
+            away_score=0,
+            winner=argentina,
+        )
+        third_place = Match.objects.create(
+            match_number=103,
+            phase=Match.Phase.THIRD_PLACE,
+            kickoff_at=datetime(2026, 7, 18, 21, 0, tzinfo=datetime_timezone.utc),
+        )
+        final = Match.objects.create(
+            match_number=104,
+            phase=Match.Phase.FINAL,
+            kickoff_at=datetime(2026, 7, 19, 19, 0, tzinfo=datetime_timezone.utc),
+        )
+
+        from apps.matches.services.knockout import advance_knockout_match
+
+        updated_count = advance_knockout_match(semifinal)
+
+        third_place.refresh_from_db()
+        final.refresh_from_db()
+        self.assertEqual(updated_count, 2)
+        self.assertEqual(final.home_team, argentina)
+        self.assertEqual(third_place.home_team, brazil)
+
 
 class MatchAdminRecalculationTests(TestCase):
     def setUp(self):
