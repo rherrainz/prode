@@ -198,6 +198,11 @@ THESPORTSDB_API_KEY = os.getenv('THESPORTSDB_API_KEY', '123')
 THESPORTSDB_BASE_URL = os.getenv('THESPORTSDB_BASE_URL', 'https://www.thesportsdb.com/api/v1/json')
 THESPORTSDB_WORLD_CUP_LEAGUE_ID = os.getenv('THESPORTSDB_WORLD_CUP_LEAGUE_ID', '4429')
 THESPORTSDB_WORLD_CUP_SEASON = os.getenv('THESPORTSDB_WORLD_CUP_SEASON', '2026')
+FIFA_API_BASE_URL = os.getenv('FIFA_API_BASE_URL', 'https://api.fifa.com/api/v3')
+FIFA_API_LANGUAGE = os.getenv('FIFA_API_LANGUAGE', 'en')
+FIFA_API_MATCH_COUNT = int(os.getenv('FIFA_API_MATCH_COUNT', '200'))
+FIFA_WORLD_CUP_COMPETITION_ID = os.getenv('FIFA_WORLD_CUP_COMPETITION_ID', '17')
+FIFA_WORLD_CUP_SEASON_ID = os.getenv('FIFA_WORLD_CUP_SEASON_ID', '285023')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

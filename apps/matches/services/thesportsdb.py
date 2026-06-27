@@ -8,6 +8,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from apps.matches.models import ApiSyncLog, Match
+from apps.matches.services.fifa import sync_fixture
 from apps.matches.services.knockout import advance_knockout_match
 from apps.teams.models import Team
 
@@ -269,7 +270,7 @@ def _sync_event_fixture(match, event, home_team, away_team, dry_run=False):
     return True
 
 
-def sync_results(days_back=1, days_forward=1, base_date=None, dry_run=False):
+def sync_results(days_back=1, days_forward=1, base_date=None, dry_run=False, use_fifa_fallback=True):
     base_date = base_date or timezone.localdate()
     request_count = 0
     updated_count = 0
@@ -369,6 +370,22 @@ def sync_results(days_back=1, days_forward=1, base_date=None, dry_run=False):
         updated_count += 1
         fixture_updated_count += advance_knockout_match(match)
 
+    fifa_result = None
+    if use_fifa_fallback:
+        fifa_result = sync_fixture(
+            days_back=days_back,
+            days_forward=days_forward,
+            base_date=base_date,
+            dry_run=dry_run,
+            update_results=True,
+            only_missing_results=True,
+        )
+        request_count += fifa_result['request_count']
+        seen_count += fifa_result['seen_count']
+        updated_count += fifa_result['updated_count']
+        fixture_updated_count += fifa_result['fixture_updated_count']
+        messages.extend(fifa_result['messages'])
+
     status = 'dry-run' if dry_run else 'ok'
     message = f'Eventos vistos: {seen_count}. Partidos actualizados: {updated_count}. Fixture actualizado: {fixture_updated_count}.'
     if messages:
@@ -388,4 +405,5 @@ def sync_results(days_back=1, days_forward=1, base_date=None, dry_run=False):
         'updated_count': updated_count,
         'fixture_updated_count': fixture_updated_count,
         'messages': messages,
+        'fifa_result': fifa_result,
     }

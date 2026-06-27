@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from apps.matches.models import Match
+from apps.matches.services.fifa import sync_fixture
 from apps.matches.services.thesportsdb import sync_results
 from apps.predictions.forms import PredictionForm
 from apps.predictions.models import Prediction
@@ -159,6 +160,7 @@ def staff_sync_results(request):
     if request.method != 'POST':
         return redirect('tournaments:staff_admin')
     try:
+        fixture_result = sync_fixture(days_back=1, days_forward=14)
         result = sync_results(days_back=1, days_forward=1)
         recalculated = recalculate_predictions()
     except Exception as exc:
@@ -166,6 +168,7 @@ def staff_sync_results(request):
     else:
         messages.success(
             request,
+            f"Fixture FIFA: {fixture_result['fixture_updated_count']} cruces actualizados. "
             f"Resultados sincronizados: {result['updated_count']} partidos actualizados, "
             f"{result['seen_count']} eventos vistos, {recalculated} pronósticos recalculados.",
         )

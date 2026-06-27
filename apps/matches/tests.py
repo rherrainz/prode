@@ -10,7 +10,7 @@ from django.utils import timezone
 from apps.matches.admin import MatchAdmin, mark_finished
 from apps.matches.management.commands import sync_results_and_recalculate
 from apps.matches.models import Match
-from apps.matches.services import thesportsdb
+from apps.matches.services import fifa, thesportsdb
 from apps.predictions.models import Prediction
 from apps.teams.models import Team
 from apps.tournaments.models import FriendTournament
@@ -19,6 +19,15 @@ from apps.tournaments.models import FriendTournament
 class SyncResultsAndRecalculateCommandTests(TestCase):
     def test_command_syncs_results_then_recalculates_predictions(self):
         calls = []
+
+        def fake_sync_fixture(days_back, days_forward, base_date, dry_run):
+            calls.append(('fixture', days_back, days_forward, base_date, dry_run))
+            return {
+                'request_count': 1,
+                'seen_count': 2,
+                'updated_count': 0,
+                'fixture_updated_count': 1,
+            }
 
         def fake_sync_results(days_back, days_forward, base_date, dry_run):
             calls.append(('sync', days_back, days_forward, base_date, dry_run))
@@ -32,8 +41,10 @@ class SyncResultsAndRecalculateCommandTests(TestCase):
             calls.append(('recalculate',))
             return 3
 
+        original_sync_fixture = sync_results_and_recalculate.sync_fixture
         original_sync_results = sync_results_and_recalculate.sync_results
         original_recalculate_predictions = sync_results_and_recalculate.recalculate_predictions
+        sync_results_and_recalculate.sync_fixture = fake_sync_fixture
         sync_results_and_recalculate.sync_results = fake_sync_results
         sync_results_and_recalculate.recalculate_predictions = fake_recalculate_predictions
         try:
@@ -49,14 +60,28 @@ class SyncResultsAndRecalculateCommandTests(TestCase):
                 stdout=output,
             )
         finally:
+            sync_results_and_recalculate.sync_fixture = original_sync_fixture
             sync_results_and_recalculate.sync_results = original_sync_results
             sync_results_and_recalculate.recalculate_predictions = original_recalculate_predictions
 
-        self.assertEqual(calls, [('sync', 0, 0, sync_results_and_recalculate.date(2026, 6, 11), False), ('recalculate',)])
+        self.assertEqual(calls, [
+            ('fixture', 0, 14, sync_results_and_recalculate.date(2026, 6, 11), False),
+            ('sync', 0, 0, sync_results_and_recalculate.date(2026, 6, 11), False),
+            ('recalculate',),
+        ])
         self.assertIn('Pronósticos recalculados: 3', output.getvalue())
 
     def test_dry_run_does_not_recalculate_predictions(self):
         calls = []
+
+        def fake_sync_fixture(days_back, days_forward, base_date, dry_run):
+            calls.append(('fixture', dry_run))
+            return {
+                'request_count': 1,
+                'seen_count': 2,
+                'updated_count': 0,
+                'fixture_updated_count': 1,
+            }
 
         def fake_sync_results(days_back, days_forward, base_date, dry_run):
             calls.append(('sync', dry_run))
@@ -70,17 +95,172 @@ class SyncResultsAndRecalculateCommandTests(TestCase):
             calls.append(('recalculate',))
             return 3
 
+        original_sync_fixture = sync_results_and_recalculate.sync_fixture
         original_sync_results = sync_results_and_recalculate.sync_results
         original_recalculate_predictions = sync_results_and_recalculate.recalculate_predictions
+        sync_results_and_recalculate.sync_fixture = fake_sync_fixture
         sync_results_and_recalculate.sync_results = fake_sync_results
         sync_results_and_recalculate.recalculate_predictions = fake_recalculate_predictions
         try:
             call_command('sync_results_and_recalculate', '--dry-run', stdout=StringIO())
         finally:
+            sync_results_and_recalculate.sync_fixture = original_sync_fixture
             sync_results_and_recalculate.sync_results = original_sync_results
             sync_results_and_recalculate.recalculate_predictions = original_recalculate_predictions
 
-        self.assertEqual(calls, [('sync', True)])
+        self.assertEqual(calls, [('fixture', True), ('sync', True)])
+
+
+class FifaSyncTests(TestCase):
+    def test_sync_fixture_populates_confirmed_knockout_match(self):
+        south_africa = Team.objects.create(name='South Africa', fifa_code='RSA')
+        canada = Team.objects.create(name='Canada', fifa_code='CAN')
+        match = Match.objects.create(
+            match_number=73,
+            phase=Match.Phase.ROUND_OF_32,
+            kickoff_at=datetime(2026, 6, 28, 19, 0, tzinfo=datetime_timezone.utc),
+            home_team_placeholder='Round of 32 equipo local',
+            away_team_placeholder='Round of 32 equipo visitante',
+        )
+
+        def fake_fetch_matches(start_at, end_at):
+            return 'fifa-fixture-endpoint', [{
+                'IdMatch': '400021518',
+                'MatchNumber': 73,
+                'Date': '2026-06-28T19:00:00Z',
+                'Home': {
+                    'IdTeam': '43883',
+                    'TeamName': [{'Locale': 'en-GB', 'Description': 'South Africa'}],
+                },
+                'Away': {
+                    'IdTeam': '43899',
+                    'TeamName': [{'Locale': 'en-GB', 'Description': 'Canada'}],
+                },
+                'HomeTeamScore': None,
+                'AwayTeamScore': None,
+                'Stadium': {'Name': [{'Locale': 'en-GB', 'Description': 'Los Angeles Stadium'}]},
+            }]
+
+        original_fetch_matches = fifa._fetch_matches
+        fifa._fetch_matches = fake_fetch_matches
+        try:
+            result = fifa.sync_fixture(days_back=0, days_forward=0, base_date=date(2026, 6, 28))
+        finally:
+            fifa._fetch_matches = original_fetch_matches
+
+        match.refresh_from_db()
+        self.assertEqual(result['seen_count'], 1)
+        self.assertEqual(result['fixture_updated_count'], 1)
+        self.assertEqual(result['updated_count'], 0)
+        self.assertEqual(match.external_id, 'fifa:400021518')
+        self.assertEqual(match.home_team, south_africa)
+        self.assertEqual(match.away_team, canada)
+        self.assertEqual(match.venue, 'Los Angeles Stadium')
+        self.assertEqual(match.status, Match.Status.SCHEDULED)
+
+    def test_sync_fixture_populates_partial_knockout_match(self):
+        england = Team.objects.create(name='England', fifa_code='ENG')
+        match = Match.objects.create(
+            match_number=80,
+            phase=Match.Phase.ROUND_OF_32,
+            kickoff_at=datetime(2026, 7, 1, 16, 0, tzinfo=datetime_timezone.utc),
+            home_team_placeholder='Round of 32 equipo local',
+            away_team_placeholder='Round of 32 equipo visitante',
+        )
+
+        def fake_fetch_matches(start_at, end_at):
+            return 'fifa-fixture-endpoint', [{
+                'IdMatch': '400021520',
+                'MatchNumber': 80,
+                'Date': '2026-07-01T16:00:00Z',
+                'Home': {
+                    'IdTeam': '43942',
+                    'TeamName': [{'Locale': 'en-GB', 'Description': 'England'}],
+                },
+                'Away': None,
+                'HomeTeamScore': None,
+                'AwayTeamScore': None,
+                'Stadium': {'Name': [{'Locale': 'en-GB', 'Description': 'Atlanta Stadium'}]},
+            }]
+
+        original_fetch_matches = fifa._fetch_matches
+        fifa._fetch_matches = fake_fetch_matches
+        try:
+            result = fifa.sync_fixture(days_back=0, days_forward=0, base_date=date(2026, 7, 1))
+        finally:
+            fifa._fetch_matches = original_fetch_matches
+
+        match.refresh_from_db()
+        self.assertEqual(result['fixture_updated_count'], 1)
+        self.assertEqual(match.home_team, england)
+        self.assertEqual(match.home_team_placeholder, '')
+        self.assertIsNone(match.away_team)
+        self.assertEqual(match.away_team_placeholder, 'Round of 32 equipo visitante')
+
+    def test_sync_results_uses_fifa_fallback_for_missing_result(self):
+        south_africa = Team.objects.create(name='South Africa', fifa_code='RSA')
+        canada = Team.objects.create(name='Canada', fifa_code='CAN')
+        match = Match.objects.create(
+            match_number=73,
+            phase=Match.Phase.ROUND_OF_32,
+            kickoff_at=datetime(2026, 6, 28, 19, 0, tzinfo=datetime_timezone.utc),
+            home_team=south_africa,
+            away_team=canada,
+        )
+
+        def fake_fetch_events_for_day(day):
+            return 'fake-endpoint', []
+
+        def fake_fetch_events_for_season():
+            return 'fake-season-endpoint', []
+
+        def fake_fetch_events_by_name(home_name, away_name):
+            return 'fake-search-endpoint', []
+
+        def fake_fetch_matches(start_at, end_at):
+            return 'fifa-results-endpoint', [{
+                'IdMatch': '400021518',
+                'MatchNumber': 73,
+                'Date': '2026-06-28T19:00:00Z',
+                'Home': {
+                    'IdTeam': '43883',
+                    'TeamName': [{'Locale': 'en-GB', 'Description': 'South Africa'}],
+                },
+                'Away': {
+                    'IdTeam': '43899',
+                    'TeamName': [{'Locale': 'en-GB', 'Description': 'Canada'}],
+                },
+                'HomeTeamScore': 1,
+                'AwayTeamScore': 1,
+                'HomeTeamPenaltyScore': 5,
+                'AwayTeamPenaltyScore': 4,
+                'Winner': '43883',
+                'MatchStatus': 0,
+                'Stadium': {'Name': [{'Locale': 'en-GB', 'Description': 'Los Angeles Stadium'}]},
+            }]
+
+        original_fetch = thesportsdb._fetch_events_for_day
+        original_fetch_season = thesportsdb._fetch_events_for_season
+        original_fetch_by_name = thesportsdb._fetch_events_by_name
+        original_fetch_matches = fifa._fetch_matches
+        thesportsdb._fetch_events_for_day = fake_fetch_events_for_day
+        thesportsdb._fetch_events_for_season = fake_fetch_events_for_season
+        thesportsdb._fetch_events_by_name = fake_fetch_events_by_name
+        fifa._fetch_matches = fake_fetch_matches
+        try:
+            result = thesportsdb.sync_results(days_back=0, days_forward=0, base_date=date(2026, 6, 28))
+        finally:
+            thesportsdb._fetch_events_for_day = original_fetch
+            thesportsdb._fetch_events_for_season = original_fetch_season
+            thesportsdb._fetch_events_by_name = original_fetch_by_name
+            fifa._fetch_matches = original_fetch_matches
+
+        match.refresh_from_db()
+        self.assertEqual(result['updated_count'], 1)
+        self.assertEqual(match.status, Match.Status.FINISHED)
+        self.assertEqual(match.home_score, 1)
+        self.assertEqual(match.away_score, 1)
+        self.assertEqual(match.winner, south_africa)
 
 
 class TheSportsDBSyncDateTests(TestCase):
@@ -121,7 +301,7 @@ class TheSportsDBSyncDateTests(TestCase):
         thesportsdb._fetch_events_for_season = fake_fetch_events_for_season
         thesportsdb._fetch_events_by_name = fake_fetch_events_by_name
         try:
-            result = thesportsdb.sync_results(days_back=0, days_forward=0, base_date=date(2026, 6, 15))
+            result = thesportsdb.sync_results(days_back=0, days_forward=0, base_date=date(2026, 6, 15), use_fifa_fallback=False)
         finally:
             thesportsdb._fetch_events_for_day = original_fetch
             thesportsdb._fetch_events_for_season = original_fetch_season
@@ -168,7 +348,7 @@ class TheSportsDBSyncDateTests(TestCase):
         thesportsdb._fetch_events_for_season = fake_fetch_events_for_season
         thesportsdb._fetch_events_by_name = fake_fetch_events_by_name
         try:
-            result = thesportsdb.sync_results(days_back=0, days_forward=0, base_date=date(2026, 6, 14))
+            result = thesportsdb.sync_results(days_back=0, days_forward=0, base_date=date(2026, 6, 14), use_fifa_fallback=False)
         finally:
             thesportsdb._fetch_events_for_day = original_fetch
             thesportsdb._fetch_events_for_season = original_fetch_season
@@ -218,7 +398,7 @@ class TheSportsDBSyncDateTests(TestCase):
         thesportsdb._fetch_events_for_season = fake_fetch_events_for_season
         thesportsdb._fetch_events_by_name = fake_fetch_events_by_name
         try:
-            result = thesportsdb.sync_results(days_back=0, days_forward=0, base_date=date(2026, 6, 17))
+            result = thesportsdb.sync_results(days_back=0, days_forward=0, base_date=date(2026, 6, 17), use_fifa_fallback=False)
         finally:
             thesportsdb._fetch_events_for_day = original_fetch
             thesportsdb._fetch_events_for_season = original_fetch_season
@@ -280,7 +460,7 @@ class TheSportsDBSyncDateTests(TestCase):
         thesportsdb._fetch_events_for_season = fake_fetch_events_for_season
         thesportsdb._fetch_events_by_name = fake_fetch_events_by_name
         try:
-            result = thesportsdb.sync_results(days_back=0, days_forward=0, base_date=date(2026, 6, 28))
+            result = thesportsdb.sync_results(days_back=0, days_forward=0, base_date=date(2026, 6, 28), use_fifa_fallback=False)
         finally:
             thesportsdb._fetch_events_for_day = original_fetch
             thesportsdb._fetch_events_for_season = original_fetch_season
@@ -336,7 +516,7 @@ class TheSportsDBSyncDateTests(TestCase):
         thesportsdb._fetch_events_for_season = fake_fetch_events_for_season
         thesportsdb._fetch_events_by_name = fake_fetch_events_by_name
         try:
-            result = thesportsdb.sync_results(days_back=0, days_forward=1, base_date=date(2026, 6, 27))
+            result = thesportsdb.sync_results(days_back=0, days_forward=1, base_date=date(2026, 6, 27), use_fifa_fallback=False)
         finally:
             thesportsdb._fetch_events_for_day = original_fetch
             thesportsdb._fetch_events_for_season = original_fetch_season

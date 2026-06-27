@@ -140,6 +140,10 @@ class MvpFlowTests(TestCase):
         self.client.force_login(staff)
         calls = []
 
+        def fake_sync_fixture(days_back, days_forward):
+            calls.append(('fixture', days_back, days_forward))
+            return {'fixture_updated_count': 3}
+
         def fake_sync_results(days_back, days_forward):
             calls.append(('sync', days_back, days_forward))
             return {'updated_count': 2, 'seen_count': 4}
@@ -148,18 +152,21 @@ class MvpFlowTests(TestCase):
             calls.append(('recalculate',))
             return 5
 
+        original_sync_fixture = views.sync_fixture
         original_sync_results = views.sync_results
         original_recalculate_predictions = views.recalculate_predictions
+        views.sync_fixture = fake_sync_fixture
         views.sync_results = fake_sync_results
         views.recalculate_predictions = fake_recalculate_predictions
         try:
             response = self.client.post(reverse('tournaments:staff_sync_results'))
         finally:
+            views.sync_fixture = original_sync_fixture
             views.sync_results = original_sync_results
             views.recalculate_predictions = original_recalculate_predictions
 
         self.assertRedirects(response, reverse('tournaments:staff_admin'))
-        self.assertEqual(calls, [('sync', 1, 1), ('recalculate',)])
+        self.assertEqual(calls, [('fixture', 1, 14), ('sync', 1, 1), ('recalculate',)])
 
     def test_regular_user_cannot_trigger_staff_operations(self):
         self.client.force_login(self.user)
@@ -573,7 +580,7 @@ class MvpFlowTests(TestCase):
         thesportsdb._fetch_events_for_season = fake_fetch_events_for_season
         thesportsdb._fetch_events_by_name = fake_fetch_events_by_name
         try:
-            result = thesportsdb.sync_results(days_back=0, days_forward=0)
+            result = thesportsdb.sync_results(days_back=0, days_forward=0, use_fifa_fallback=False)
         finally:
             thesportsdb._fetch_events_for_day = original_fetch
             thesportsdb._fetch_events_for_season = original_fetch_season
