@@ -289,7 +289,7 @@ class TheSportsDBSyncDateTests(TestCase):
         round_of_32.refresh_from_db()
         round_of_16.refresh_from_db()
         self.assertEqual(result['updated_count'], 1)
-        self.assertEqual(result['fixture_updated_count'], 1)
+        self.assertEqual(result['fixture_updated_count'], 2)
         self.assertEqual(round_of_32.external_id, 'thesportsdb:round-32-73')
         self.assertEqual(round_of_32.home_team, south_africa)
         self.assertEqual(round_of_32.away_team, canada)
@@ -298,6 +298,61 @@ class TheSportsDBSyncDateTests(TestCase):
         self.assertEqual(round_of_32.winner, south_africa)
         self.assertEqual(round_of_16.home_team, south_africa)
         self.assertEqual(round_of_16.home_team_placeholder, '')
+
+    def test_sync_populates_confirmed_knockout_fixture_without_result(self):
+        canada = Team.objects.create(name='Canada', fifa_code='CAN')
+        south_africa = Team.objects.create(name='South Africa', fifa_code='RSA')
+        match = Match.objects.create(
+            match_number=73,
+            phase=Match.Phase.ROUND_OF_32,
+            kickoff_at=datetime(2026, 6, 28, 19, 0, tzinfo=datetime_timezone.utc),
+            home_team_placeholder='Round of 32 equipo local',
+            away_team_placeholder='Round of 32 equipo visitante',
+        )
+
+        def fake_fetch_events_for_day(day):
+            if day == date(2026, 6, 28):
+                return 'fake-endpoint', [{
+                    'idEvent': 'canada-south-africa',
+                    'dateEvent': '2026-06-28',
+                    'strTimestamp': '2026-06-28T19:00:00+00:00',
+                    'strHomeTeam': 'Canada',
+                    'strAwayTeam': 'South Africa',
+                    'intHomeScore': None,
+                    'intAwayScore': None,
+                }]
+            return 'fake-endpoint', []
+
+        def fake_fetch_events_for_season():
+            return 'fake-season-endpoint', []
+
+        def fake_fetch_events_by_name(home_name, away_name):
+            return 'fake-search-endpoint', []
+
+        original_fetch = thesportsdb._fetch_events_for_day
+        original_fetch_season = thesportsdb._fetch_events_for_season
+        original_fetch_by_name = thesportsdb._fetch_events_by_name
+        thesportsdb._fetch_events_for_day = fake_fetch_events_for_day
+        thesportsdb._fetch_events_for_season = fake_fetch_events_for_season
+        thesportsdb._fetch_events_by_name = fake_fetch_events_by_name
+        try:
+            result = thesportsdb.sync_results(days_back=0, days_forward=1, base_date=date(2026, 6, 27))
+        finally:
+            thesportsdb._fetch_events_for_day = original_fetch
+            thesportsdb._fetch_events_for_season = original_fetch_season
+            thesportsdb._fetch_events_by_name = original_fetch_by_name
+
+        match.refresh_from_db()
+        self.assertEqual(result['updated_count'], 0)
+        self.assertEqual(result['fixture_updated_count'], 1)
+        self.assertEqual(match.external_id, 'thesportsdb:canada-south-africa')
+        self.assertEqual(match.home_team, canada)
+        self.assertEqual(match.away_team, south_africa)
+        self.assertEqual(match.home_team_placeholder, '')
+        self.assertEqual(match.away_team_placeholder, '')
+        self.assertEqual(match.status, Match.Status.SCHEDULED)
+        self.assertIsNone(match.home_score)
+        self.assertIsNone(match.away_score)
 
     def test_semifinal_advancement_populates_final_and_third_place(self):
         argentina = Team.objects.create(name='Argentina', fifa_code='ARG')

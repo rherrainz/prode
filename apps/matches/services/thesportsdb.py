@@ -239,6 +239,36 @@ def _winner_from_event(event, home_score, away_score, home_team, away_team):
     return None
 
 
+def _sync_event_fixture(match, event, home_team, away_team, dry_run=False):
+    external_id = f"thesportsdb:{event.get('idEvent')}" if event.get('idEvent') else match.external_id
+    changed = (
+        match.external_id != external_id
+        or match.home_team_id != home_team.id
+        or match.away_team_id != away_team.id
+        or match.home_team_placeholder != ''
+        or match.away_team_placeholder != ''
+    )
+    if dry_run or not changed:
+        return changed
+
+    match.external_id = external_id
+    match.home_team = home_team
+    match.away_team = away_team
+    match.home_team_placeholder = ''
+    match.away_team_placeholder = ''
+    match.last_synced_at = timezone.now()
+    match.save(update_fields=[
+        'external_id',
+        'home_team',
+        'away_team',
+        'home_team_placeholder',
+        'away_team_placeholder',
+        'last_synced_at',
+        'updated_at',
+    ])
+    return True
+
+
 def sync_results(days_back=1, days_forward=1, base_date=None, dry_run=False):
     base_date = base_date or timezone.localdate()
     request_count = 0
@@ -290,10 +320,6 @@ def sync_results(days_back=1, days_forward=1, base_date=None, dry_run=False):
 
     seen_count = len(collected_events)
     for day, event in collected_events:
-        home_score = _score_value(event.get('intHomeScore'))
-        away_score = _score_value(event.get('intAwayScore'))
-        if home_score is None or away_score is None:
-            continue
         match = _match_for_event(event)
         if not match:
             messages.append(f"No se encontró partido para {event.get('strHomeTeam')} vs {event.get('strAwayTeam')} ({day})")
@@ -303,6 +329,14 @@ def sync_results(days_back=1, days_forward=1, base_date=None, dry_run=False):
         if not home_team or not away_team:
             messages.append(f"No se encontraron equipos para {event.get('strHomeTeam')} vs {event.get('strAwayTeam')} ({day})")
             continue
+        if _sync_event_fixture(match, event, home_team, away_team, dry_run=dry_run):
+            fixture_updated_count += 1
+
+        home_score = _score_value(event.get('intHomeScore'))
+        away_score = _score_value(event.get('intAwayScore'))
+        if home_score is None or away_score is None:
+            continue
+
         winner = _winner_from_event(event, home_score, away_score, home_team, away_team)
         if match.phase != Match.Phase.GROUP_STAGE and home_score == away_score and not winner:
             messages.append(f"No se encontró ganador por penales para {event.get('strHomeTeam')} vs {event.get('strAwayTeam')} ({day})")
