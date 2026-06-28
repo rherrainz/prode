@@ -142,6 +142,28 @@ def _event_key(event):
     ])
 
 
+def _event_is_finished(event):
+    status = (event.get('strStatus') or '').strip().lower()
+    if not status:
+        return event.get('intHomeScore') not in (None, '') and event.get('intAwayScore') not in (None, '')
+    return status in {'ft', 'aet', 'pen', 'match finished', 'finished'}
+
+
+def _event_sync_priority(event):
+    has_score = event.get('intHomeScore') not in (None, '') and event.get('intAwayScore') not in (None, '')
+    if _event_is_finished(event) and has_score:
+        return 3
+    if has_score:
+        return 2
+    return 1
+
+
+def _store_event(collected_events, key, day, event):
+    existing = collected_events.get(key)
+    if not existing or _event_sync_priority(event) > _event_sync_priority(existing[1]):
+        collected_events[key] = (day, event)
+
+
 def _match_for_event(event):
     home_name = _normalize_team_name(event.get('strHomeTeam') or '')
     away_name = _normalize_team_name(event.get('strAwayTeam') or '')
@@ -277,8 +299,7 @@ def sync_results(days_back=1, days_forward=1, base_date=None, dry_run=False, use
     fixture_updated_count = 0
     seen_count = 0
     messages = []
-    collected_events = []
-    seen_event_keys = set()
+    collected_events = {}
 
     days = _sync_days(base_date, days_back, days_forward)
     sync_day_set = set(days)
@@ -289,9 +310,7 @@ def sync_results(days_back=1, days_forward=1, base_date=None, dry_run=False, use
         request_count += 1
         for event in day_events:
             key = _event_key(event)
-            if key not in seen_event_keys:
-                seen_event_keys.add(key)
-                collected_events.append((day, event))
+            _store_event(collected_events, key, day, event)
 
     endpoint, season_events = _fetch_events_for_season()
     request_count += 1
@@ -299,9 +318,7 @@ def sync_results(days_back=1, days_forward=1, base_date=None, dry_run=False, use
         if _event_date(event) not in sync_day_set:
             continue
         key = _event_key(event)
-        if key not in seen_event_keys:
-            seen_event_keys.add(key)
-            collected_events.append((_event_date(event), event))
+        _store_event(collected_events, key, _event_date(event), event)
 
     expected_matches = (
         Match.objects
@@ -315,12 +332,10 @@ def sync_results(days_back=1, days_forward=1, base_date=None, dry_run=False, use
             if _event_date(event) not in sync_day_set:
                 continue
             key = _event_key(event)
-            if key not in seen_event_keys:
-                seen_event_keys.add(key)
-                collected_events.append((_event_date(event), event))
+            _store_event(collected_events, key, _event_date(event), event)
 
     seen_count = len(collected_events)
-    for day, event in collected_events:
+    for day, event in collected_events.values():
         match = _match_for_event(event)
         if not match:
             messages.append(f"No se encontró partido para {event.get('strHomeTeam')} vs {event.get('strAwayTeam')} ({day})")
@@ -336,6 +351,8 @@ def sync_results(days_back=1, days_forward=1, base_date=None, dry_run=False, use
         home_score = _score_value(event.get('intHomeScore'))
         away_score = _score_value(event.get('intAwayScore'))
         if home_score is None or away_score is None:
+            continue
+        if not _event_is_finished(event):
             continue
 
         winner = _winner_from_event(event, home_score, away_score, home_team, away_team)
