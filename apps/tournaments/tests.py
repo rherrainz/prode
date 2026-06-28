@@ -576,6 +576,22 @@ class MvpFlowTests(TestCase):
         self.assertEqual(match.home_team_placeholder, '')
         self.assertEqual(match.away_team_placeholder, '')
 
+    def test_seed_sets_knockout_winner_placeholders(self):
+        Match.objects.all().delete()
+        Team.objects.all().delete()
+        SeedWorldCupCommand().handle()
+
+        round_of_16 = Match.objects.get(match_number=89)
+        third_place = Match.objects.get(match_number=103)
+        final = Match.objects.get(match_number=104)
+
+        self.assertEqual(round_of_16.home_team_placeholder, 'Ganador partido 73')
+        self.assertEqual(round_of_16.away_team_placeholder, 'Ganador partido 75')
+        self.assertEqual(third_place.home_team_placeholder, 'Perdedor partido 101')
+        self.assertEqual(third_place.away_team_placeholder, 'Perdedor partido 102')
+        self.assertEqual(final.home_team_placeholder, 'Ganador partido 101')
+        self.assertEqual(final.away_team_placeholder, 'Ganador partido 102')
+
     def test_thesportsdb_sync_updates_finished_result(self):
         self.future_match.external_id = 'thesportsdb:fixture-1'
         self.future_match.save(update_fields=['external_id'])

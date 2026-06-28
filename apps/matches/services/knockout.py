@@ -40,6 +40,39 @@ LOSER_ADVANCEMENT = {
 }
 
 
+def placeholder_for_match_slot(match_number, slot):
+    for source_match_number, target in WINNER_ADVANCEMENT.items():
+        if target == (match_number, slot):
+            return f'Ganador partido {source_match_number}'
+    for source_match_number, target in LOSER_ADVANCEMENT.items():
+        if target == (match_number, slot):
+            return f'Perdedor partido {source_match_number}'
+    return None
+
+
+def update_knockout_placeholders(dry_run=False):
+    updated_count = 0
+    target_match_numbers = {
+        target_match_number
+        for target_match_number, slot in [*WINNER_ADVANCEMENT.values(), *LOSER_ADVANCEMENT.values()]
+    }
+    for match in Match.objects.filter(match_number__in=target_match_numbers):
+        update_fields = []
+        home_placeholder = placeholder_for_match_slot(match.match_number, 'home')
+        if home_placeholder and not match.home_team_id and match.home_team_placeholder != home_placeholder:
+            match.home_team_placeholder = home_placeholder
+            update_fields.append('home_team_placeholder')
+        away_placeholder = placeholder_for_match_slot(match.match_number, 'away')
+        if away_placeholder and not match.away_team_id and match.away_team_placeholder != away_placeholder:
+            match.away_team_placeholder = away_placeholder
+            update_fields.append('away_team_placeholder')
+        if update_fields:
+            updated_count += 1
+            if not dry_run:
+                match.save(update_fields=[*update_fields, 'updated_at'])
+    return updated_count
+
+
 def knockout_loser(match):
     if not match.has_result or not match.home_team or not match.away_team:
         return None

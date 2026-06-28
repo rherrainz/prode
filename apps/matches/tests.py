@@ -197,6 +197,30 @@ class FifaSyncTests(TestCase):
         self.assertIsNone(match.away_team)
         self.assertEqual(match.away_team_placeholder, 'Round of 32 equipo visitante')
 
+    def test_sync_fixture_updates_knockout_winner_placeholders(self):
+        match = Match.objects.create(
+            match_number=89,
+            phase=Match.Phase.ROUND_OF_16,
+            kickoff_at=datetime(2026, 7, 4, 21, 0, tzinfo=datetime_timezone.utc),
+            home_team_placeholder='Round of 16 equipo local',
+            away_team_placeholder='Round of 16 equipo visitante',
+        )
+
+        def fake_fetch_matches(start_at, end_at):
+            return 'fifa-fixture-endpoint', []
+
+        original_fetch_matches = fifa._fetch_matches
+        fifa._fetch_matches = fake_fetch_matches
+        try:
+            result = fifa.sync_fixture(days_back=0, days_forward=0, base_date=date(2026, 7, 4))
+        finally:
+            fifa._fetch_matches = original_fetch_matches
+
+        match.refresh_from_db()
+        self.assertEqual(result['fixture_updated_count'], 1)
+        self.assertEqual(match.home_team_placeholder, 'Ganador partido 73')
+        self.assertEqual(match.away_team_placeholder, 'Ganador partido 75')
+
     def test_sync_results_uses_fifa_fallback_for_missing_result(self):
         south_africa = Team.objects.create(name='South Africa', fifa_code='RSA')
         canada = Team.objects.create(name='Canada', fifa_code='CAN')

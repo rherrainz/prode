@@ -7,7 +7,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from apps.matches.models import ApiSyncLog, Match
-from apps.matches.services.knockout import advance_knockout_match
+from apps.matches.services.knockout import advance_knockout_match, update_knockout_placeholders
 from apps.teams.models import Team
 
 
@@ -238,7 +238,7 @@ def sync_fixture(days_back=1, days_forward=7, base_date=None, dry_run=False, upd
     start_at, end_at = _window_for_dates(base_date, days_back, days_forward)
     endpoint, events = _fetch_matches(start_at, end_at)
     request_count = 1
-    fixture_updated_count = 0
+    fixture_updated_count = update_knockout_placeholders(dry_run=dry_run)
     updated_count = 0
     messages = []
 

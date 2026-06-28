@@ -4,6 +4,7 @@ from datetime import datetime
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from apps.matches.models import Match
+from apps.matches.services.knockout import placeholder_for_match_slot
 from apps.teams.models import Team, WorldCupGroup
 
 
@@ -221,11 +222,13 @@ class Command(BaseCommand):
                 home_team = existing_match.home_team
             if existing_match and away_team is None and existing_match.away_team_id:
                 away_team = existing_match.away_team
-            home_placeholder = '' if home_team else f'{round_name} equipo local'
-            away_placeholder = '' if away_team else f'{round_name} equipo visitante'
-            if existing_match and home_team is None and existing_match.home_team_placeholder:
+            home_bracket_placeholder = placeholder_for_match_slot(match_number, 'home')
+            away_bracket_placeholder = placeholder_for_match_slot(match_number, 'away')
+            home_placeholder = '' if home_team else home_bracket_placeholder or f'{round_name} equipo local'
+            away_placeholder = '' if away_team else away_bracket_placeholder or f'{round_name} equipo visitante'
+            if existing_match and home_team is None and not home_bracket_placeholder and existing_match.home_team_placeholder:
                 home_placeholder = existing_match.home_team_placeholder
-            if existing_match and away_team is None and existing_match.away_team_placeholder:
+            if existing_match and away_team is None and not away_bracket_placeholder and existing_match.away_team_placeholder:
                 away_placeholder = existing_match.away_team_placeholder
             Match.objects.update_or_create(
                 match_number=match_number,
