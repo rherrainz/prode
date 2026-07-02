@@ -70,6 +70,7 @@ python manage.py recalculate_points
 ```
 
 9. Revisar la tabla de posiciones del torneo. La tabla muestra puntos totales y cambio de posición desde la última actualización de resultados.
+10. Desde la tabla o los miembros del torneo, abrir los pronósticos de cada jugador para ver el detalle por partido, subtotales por ronda y conteo de exactos, aciertos no exactos y no acertados.
 
 ## Comandos
 
@@ -86,6 +87,8 @@ python manage.py sync_results_and_recalculate --days-back 1 --days-forward 1
 `seed_worldcup_structure` carga los 12 grupos sorteados, 48 equipos y los 104 partidos desde `apps/matches/data/world_cup_2026_schedule.csv`. Es un comando de bootstrap inicial/desarrollo: en producción, el fixture actualizado se toma desde FIFA. Si se ejecuta luego de tener cruces confirmados, conserva equipos ya cargados cuando el CSV todavía dice `TBD`.
 
 `sync_results_and_recalculate` primero actualiza el fixture confirmado desde FIFA, luego sincroniza resultados desde TheSportsDB con fallback FIFA y recalcula puntos. Cuando cambian puntajes, también actualiza el snapshot de posiciones para mostrar subidas y bajadas en el leaderboard.
+
+En eliminatorias, los placeholders se muestran como `Ganador partido ###` o `Perdedor partido ###` para que los cruces futuros sean identificables aunque FIFA todavía no haya confirmado los equipos. Cuando FIFA confirma el fixture, esos placeholders se reemplazan por los equipos reales.
 
 ## Verificación local
 
@@ -227,6 +230,8 @@ python manage.py sync_results_and_recalculate --date 2026-06-15 --days-back 1 --
 
 La sincronización consulta `eventsday.php` y usa `eventsseason.php` como fallback para partidos que TheSportsDB omite en la consulta diaria. También contempla partidos cuyo día UTC difiere del día ET, por ejemplo partidos de madrugada.
 
+Además, si TheSportsDB devuelve el mismo partido desde más de una consulta, la app prioriza eventos finalizados (`FT`, `AET`, `PEN`) por sobre marcadores parciales o en vivo. Esto evita guardar un resultado intermedio, por ejemplo un `0-0` durante el segundo tiempo, cuando otra respuesta ya trae el resultado final correcto.
+
 Para Railway Cron cada 2 horas:
 
 ```bash
@@ -236,6 +241,20 @@ python manage.py sync_results_and_recalculate --days-back 1 --days-forward 1
 ## Leaderboard
 
 La tabla de posiciones está limitada a un ancho cómodo en desktop y muestra el cambio de posición desde la última actualización de resultados. El snapshot de posiciones se actualiza cuando `recalculate_predictions()` detecta cambios reales de puntos; si un cron corre sin resultados nuevos, no pisa el último movimiento visible.
+
+## Pronósticos por jugador
+
+La vista de pronósticos de cada miembro muestra solo partidos finalizados y puntuados para usuarios normales. Los usuarios staff también pueden ver pronósticos futuros; esos partidos se separan como pendientes y no cuentan como no acertados.
+
+Cada ronda muestra:
+
+- subtotal de puntos;
+- cantidad de resultados exactos;
+- cantidad de aciertos no exactos;
+- cantidad de no acertados;
+- pendientes, si corresponde.
+
+El resumen superior suma esos mismos datos para todo el jugador.
 
 ## Futuro Google Login
 
