@@ -322,6 +322,51 @@ a:hover {
   margin-bottom: 1.25rem;
 }
 
+.prediction-round__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  justify-content: flex-end;
+}
+
+.prediction-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: .75rem;
+  margin-bottom: 1.25rem;
+}
+
+.prediction-summary--round {
+  padding: .85rem 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.prediction-summary__item {
+  min-width: 0;
+  padding: .2rem 0;
+}
+
+.prediction-summary__item--points {
+  color: #7a5720;
+}
+
+.prediction-summary__label {
+  display: block;
+  margin-bottom: .15rem;
+  color: var(--color-muted);
+  font-size: .78rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.prediction-summary__item strong {
+  color: var(--color-navy);
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
 .prediction-matchup {
   display: inline-flex;
   align-items: center;

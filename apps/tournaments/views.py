@@ -58,17 +58,64 @@ def _readonly_prediction_rounds(predictions):
     rounds = []
     current_label = None
     current_predictions = []
+
+    def stats_for_round(round_predictions):
+        stats = {
+            'points': 0,
+            'exact': 0,
+            'outcome': 0,
+            'wrong': 0,
+            'pending': 0,
+        }
+        for prediction in round_predictions:
+            match = prediction.match
+            stats['points'] += prediction.points
+            if match.status != Match.Status.FINISHED or not match.has_result:
+                stats['pending'] += 1
+            elif prediction.predicted_home_score == match.home_score and prediction.predicted_away_score == match.away_score:
+                stats['exact'] += 1
+            elif prediction.predicted_outcome() == match.outcome():
+                stats['outcome'] += 1
+            else:
+                stats['wrong'] += 1
+        stats['scored'] = stats['exact'] + stats['outcome'] + stats['wrong']
+        return stats
+
+    def append_round(label, round_predictions):
+        rounds.append({
+            'label': label,
+            'predictions': round_predictions,
+            'stats': stats_for_round(round_predictions),
+        })
+
     for prediction in predictions:
         label = _prediction_round_label(prediction.match)
         if label != current_label:
             if current_predictions:
-                rounds.append({'label': current_label, 'predictions': current_predictions})
+                append_round(current_label, current_predictions)
             current_label = label
             current_predictions = []
         current_predictions.append(prediction)
     if current_predictions:
-        rounds.append({'label': current_label, 'predictions': current_predictions})
+        append_round(current_label, current_predictions)
     return rounds
+
+
+def _readonly_prediction_totals(rounds):
+    totals = {
+        'points': 0,
+        'exact': 0,
+        'outcome': 0,
+        'wrong': 0,
+        'pending': 0,
+        'scored': 0,
+        'predictions': 0,
+    }
+    for round_data in rounds:
+        totals['predictions'] += len(round_data['predictions'])
+        for key in ['points', 'exact', 'outcome', 'wrong', 'pending', 'scored']:
+            totals[key] += round_data['stats'][key]
+    return totals
 
 
 def _member_tournament_or_forbidden(request, slug):
@@ -363,10 +410,13 @@ def member_predictions(request, slug, user_id):
             calculated_at__isnull=False,
         )
 
+    rounds = _readonly_prediction_rounds(predictions)
+
     return render(request, 'predictions/member_detail.html', {
         'tournament': tournament,
         'viewed_user': viewed_user,
-        'rounds': _readonly_prediction_rounds(predictions),
+        'rounds': rounds,
+        'totals': _readonly_prediction_totals(rounds),
         'can_view_future': can_view_future,
     })
 

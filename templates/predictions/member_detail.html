@@ -18,11 +18,63 @@
   </section>
 {% endif %}
 
+<section class="panel prediction-summary">
+  <div class="prediction-summary__item prediction-summary__item--points">
+    <span class="prediction-summary__label">Total</span>
+    <strong>{{ totals.points }}</strong>
+  </div>
+  <div class="prediction-summary__item">
+    <span class="prediction-summary__label">Exactos</span>
+    <strong>{{ totals.exact }}</strong>
+  </div>
+  <div class="prediction-summary__item">
+    <span class="prediction-summary__label">No exactos</span>
+    <strong>{{ totals.outcome }}</strong>
+  </div>
+  <div class="prediction-summary__item">
+    <span class="prediction-summary__label">No acertados</span>
+    <strong>{{ totals.wrong }}</strong>
+  </div>
+  {% if totals.pending %}
+    <div class="prediction-summary__item">
+      <span class="prediction-summary__label">Pendientes</span>
+      <strong>{{ totals.pending }}</strong>
+    </div>
+  {% endif %}
+</section>
+
 {% for round in rounds %}
   <section class="panel prediction-round">
     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
       <h2 class="mb-0">{{ round.label }}</h2>
-      <span class="badge-accent">{{ round.predictions|length }} pronósticos</span>
+      <div class="prediction-round__badges">
+        <span class="badge-accent">{{ round.stats.points }} pts</span>
+        <span class="badge-accent">{{ round.predictions|length }} pronósticos</span>
+      </div>
+    </div>
+    <div class="prediction-summary prediction-summary--round">
+      <div class="prediction-summary__item prediction-summary__item--points">
+        <span class="prediction-summary__label">Subtotal</span>
+        <strong>{{ round.stats.points }}</strong>
+      </div>
+      <div class="prediction-summary__item">
+        <span class="prediction-summary__label">Exactos</span>
+        <strong>{{ round.stats.exact }}</strong>
+      </div>
+      <div class="prediction-summary__item">
+        <span class="prediction-summary__label">No exactos</span>
+        <strong>{{ round.stats.outcome }}</strong>
+      </div>
+      <div class="prediction-summary__item">
+        <span class="prediction-summary__label">No acertados</span>
+        <strong>{{ round.stats.wrong }}</strong>
+      </div>
+      {% if round.stats.pending %}
+        <div class="prediction-summary__item">
+          <span class="prediction-summary__label">Pendientes</span>
+          <strong>{{ round.stats.pending }}</strong>
+        </div>
+      {% endif %}
     </div>
     <div class="table-responsive mobile-stack-table shadow-none">
       <table class="table align-middle">

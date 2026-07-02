@@ -437,6 +437,75 @@ class MvpFlowTests(TestCase):
         }))
         self.assertNotContains(response, '4 - 4')
 
+    def test_member_prediction_detail_shows_round_subtotals(self):
+        tournament = FriendTournament.objects.create(name='Prediction Summary Tournament')
+        TournamentMembership.objects.create(tournament=tournament, user=self.user)
+        TournamentMembership.objects.create(tournament=tournament, user=self.other_user)
+        second_finished_match = Match.objects.create(
+            match_number=3,
+            phase=Match.Phase.GROUP_STAGE,
+            home_team=self.team_a,
+            away_team=self.team_c,
+            kickoff_at=timezone.now() - timedelta(hours=2),
+        )
+        third_finished_match = Match.objects.create(
+            match_number=4,
+            phase=Match.Phase.GROUP_STAGE,
+            home_team=self.team_b,
+            away_team=self.team_d,
+            kickoff_at=timezone.now() - timedelta(hours=3),
+        )
+        Prediction.objects.create(
+            tournament=tournament,
+            user=self.other_user,
+            match=self.locked_match,
+            predicted_home_score=1,
+            predicted_away_score=0,
+        )
+        Prediction.objects.create(
+            tournament=tournament,
+            user=self.other_user,
+            match=second_finished_match,
+            predicted_home_score=2,
+            predicted_away_score=0,
+        )
+        Prediction.objects.create(
+            tournament=tournament,
+            user=self.other_user,
+            match=third_finished_match,
+            predicted_home_score=0,
+            predicted_away_score=2,
+        )
+        self.locked_match.status = Match.Status.FINISHED
+        self.locked_match.home_score = 1
+        self.locked_match.away_score = 0
+        self.locked_match.save()
+        second_finished_match.status = Match.Status.FINISHED
+        second_finished_match.home_score = 3
+        second_finished_match.away_score = 1
+        second_finished_match.save()
+        third_finished_match.status = Match.Status.FINISHED
+        third_finished_match.home_score = 2
+        third_finished_match.away_score = 0
+        third_finished_match.save()
+        recalculate_predictions(tournament=tournament)
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('tournaments:member_predictions', kwargs={
+            'slug': tournament.slug,
+            'user_id': self.other_user.id,
+        }))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['totals']['points'], 7)
+        self.assertEqual(response.context['totals']['exact'], 1)
+        self.assertEqual(response.context['totals']['outcome'], 1)
+        self.assertEqual(response.context['totals']['wrong'], 1)
+        self.assertContains(response, 'Subtotal')
+        self.assertContains(response, 'Exactos')
+        self.assertContains(response, 'No exactos')
+        self.assertContains(response, 'No acertados')
+
     def test_match_predictions_show_group_predictions_for_finished_match(self):
         tournament = FriendTournament.objects.create(name='Match Predictions Tournament')
         third_user = User.objects.create_user('third', 'third@example.com', 'pass12345')
